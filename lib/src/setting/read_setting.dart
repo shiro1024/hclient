@@ -34,8 +34,6 @@ class ReadSetting with JHLifeCircleBeanWithConfigStorage implements JHLifeCircle
   RxInt portraitImageRegionWidthRatio = 100.obs;
   RxInt landscapeImageRegionWidthRatio = 100.obs;
   RxnString tapZoneConfigJson = RxnString();
-  RxBool useThirdPartyViewer = false.obs;
-  RxnString thirdPartyViewerPath = RxnString();
   RxDouble autoModeInterval = 2.0.obs;
   Rx<AutoModeStyle> autoModeStyle = AutoModeStyle.turnPage.obs;
   Rx<TurnPageMode> turnPageMode = TurnPageMode.adaptive.obs;
@@ -148,8 +146,6 @@ class ReadSetting with JHLifeCircleBeanWithConfigStorage implements JHLifeCircle
     landscapeImageRegionWidthRatio.value = map['landscapeImageRegionWidthRatio'] ?? map['imageRegionWidthRatio'] ?? landscapeImageRegionWidthRatio.value;
     tapZoneConfigJson.value = map['tapZoneConfig'] ?? TapZoneConfig.classic().toJsonString();
     _cachedTapZoneConfig = null;
-    useThirdPartyViewer.value = map['useThirdPartyViewer'] ?? useThirdPartyViewer.value;
-    thirdPartyViewerPath.value = map['thirdPartyViewerPath'];
     turnPageMode.value = TurnPageMode.values[map['turnPageMode']];
     preloadDistance.value = map['preloadDistance'];
     preloadDistanceLocal.value = map['preloadDistanceLocal'] ?? preloadDistanceLocal.value;
@@ -192,8 +188,6 @@ class ReadSetting with JHLifeCircleBeanWithConfigStorage implements JHLifeCircle
       'portraitImageRegionWidthRatio': portraitImageRegionWidthRatio.value,
       'landscapeImageRegionWidthRatio': landscapeImageRegionWidthRatio.value,
       'tapZoneConfig': tapZoneConfigJson.value,
-      'useThirdPartyViewer': useThirdPartyViewer.value,
-      'thirdPartyViewerPath': thirdPartyViewerPath.value,
       'turnPageMode': turnPageMode.value.index,
       'preloadDistance': preloadDistance.value,
       'preloadDistanceLocal': preloadDistanceLocal.value,
@@ -335,18 +329,6 @@ class ReadSetting with JHLifeCircleBeanWithConfigStorage implements JHLifeCircle
     log.debug('saveTapZoneConfig:${value.toJsonString()}');
     _cachedTapZoneConfig = value;
     tapZoneConfigJson.value = value.toJsonString();
-    await saveBeanConfig();
-  }
-
-  Future<void> saveUseThirdPartyViewer(bool value) async {
-    log.debug('saveUseThirdPartyViewer:$value');
-    useThirdPartyViewer.value = value;
-    await saveBeanConfig();
-  }
-
-  Future<void> saveThirdPartyViewerPath(String? value) async {
-    log.debug('saveThirdPartyViewerPath:$value');
-    thirdPartyViewerPath.value = value;
     await saveBeanConfig();
   }
 

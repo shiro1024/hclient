@@ -24,7 +24,6 @@ class PreferenceSetting with JHLifeCircleBeanWithConfigStorage implements JHLife
   RxBool enableSwipeBackGesture = true.obs;
   RxBool enableLeftMenuDrawerGesture = true.obs;
   RxBool enableQuickSearchDrawerGesture = true.obs;
-  RxInt drawerGestureEdgeWidth = 100.obs;
   RxBool showAllGalleryTitles = false.obs;
   RxBool showGalleryTagVoteStatus = false.obs;
   RxBool showComments = true.obs;
@@ -59,7 +58,6 @@ class PreferenceSetting with JHLifeCircleBeanWithConfigStorage implements JHLife
     preloadGalleryCover.value = map['preloadGalleryCover'] ?? preloadGalleryCover.value;
     enableLeftMenuDrawerGesture.value = map['enableLeftMenuDrawerGesture'] ?? enableLeftMenuDrawerGesture.value;
     enableQuickSearchDrawerGesture.value = map['enableQuickSearchDrawerGesture'] ?? enableQuickSearchDrawerGesture.value;
-    drawerGestureEdgeWidth.value = map['drawerGestureEdgeWidth'] ?? drawerGestureEdgeWidth.value;
     simpleDashboardMode.value = map['simpleDashboardMode'] ?? simpleDashboardMode.value;
     hideBottomBar.value = map['hideBottomBar'] ?? hideBottomBar.value;
     hideScroll2TopButton.value = Scroll2TopButtonModeEnum.values[map['hideScroll2TopButton'] ?? Scroll2TopButtonModeEnum.scrollDown.index];
@@ -91,7 +89,6 @@ class PreferenceSetting with JHLifeCircleBeanWithConfigStorage implements JHLife
       'enableSwipeBackGesture': enableSwipeBackGesture.value,
       'enableLeftMenuDrawerGesture': enableLeftMenuDrawerGesture.value,
       'enableQuickSearchDrawerGesture': enableQuickSearchDrawerGesture.value,
-      'drawerGestureEdgeWidth': drawerGestureEdgeWidth.value,
       'simpleDashboardMode': simpleDashboardMode.value,
       'hideBottomBar': hideBottomBar.value,
       'hideScroll2TopButton': hideScroll2TopButton.value.index,
@@ -176,12 +173,6 @@ class PreferenceSetting with JHLifeCircleBeanWithConfigStorage implements JHLife
   Future<void> saveEnableQuickSearchDrawerGesture(bool enableQuickSearchDrawerGesture) async {
     log.debug('saveEnableQuickSearchDrawerGesture:$enableQuickSearchDrawerGesture');
     this.enableQuickSearchDrawerGesture.value = enableQuickSearchDrawerGesture;
-    await saveBeanConfig();
-  }
-
-  Future<void> saveDrawerGestureEdgeWidth(int drawerGestureEdgeWidth) async {
-    log.debug('saveDrawerGestureEdgeWidth:$drawerGestureEdgeWidth');
-    this.drawerGestureEdgeWidth.value = drawerGestureEdgeWidth;
     await saveBeanConfig();
   }
 

@@ -48,16 +48,4 @@ class ArchiveDao {
     return (appDb.delete(appDb.archiveDownloaded)..where((archive) => archive.gid.equals(gid))).go();
   }
 
-  static Future<int> updateArchiveStatus(int oldStatusIndex, int newStatusCode) {
-    return (appDb.update(appDb.archiveDownloaded)..where((a) => a.archiveStatusCode.equals(oldStatusIndex)))
-        .write(ArchiveDownloadedCompanion(archiveStatusCode: Value(newStatusCode)));
-  }
-
-  static Future<List<ArchiveDownloadedOldData>> selectOldArchives() {
-    return (appDb.select(appDb.archiveDownloadedOld)..orderBy([(archive) => OrderingTerm(expression: archive.sortOrder)])).get();
-  }
-
-  static Future<int> updateOldArchive(ArchiveDownloadedOldCompanion archive) {
-    return (appDb.update(appDb.archiveDownloadedOld)..where((a) => a.gid.equals(archive.gid.value))).write(archive);
-  }
 }

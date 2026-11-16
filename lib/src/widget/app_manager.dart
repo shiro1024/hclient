@@ -1,3 +1,7 @@
+import '../pages/download/download_base_page.dart';
+import '../pages/download/transfer_navigation.dart';
+import '../service/transfer_activity_service.dart';
+
 import 'dart:ui';
 
 import 'package:blur/blur.dart';
@@ -15,16 +19,34 @@ import '../service/log.dart';
 import '../utils/route_util.dart';
 
 typedef DidChangePlatformBrightnessCallback = void Function();
-typedef DidChangeAppLifecycleStateCallback = void Function(AppLifecycleState state);
+typedef DidChangeAppLifecycleStateCallback = void Function(
+  AppLifecycleState state,
+);
 typedef DidHaveMemoryPressureCallback = void Function();
 typedef AppLaunchCallback = void Function(BuildContext context);
 
 class AppManager extends StatefulWidget {
-  static final List<DidChangePlatformBrightnessCallback> _didChangePlatformBrightnessCallbacks = [];
-  static final List<DidChangeAppLifecycleStateCallback> _didChangeAppLifecycleStateCallbacks = [];
-  static final List<DidHaveMemoryPressureCallback> _didHaveMemoryPressureCallbacks = [];
+  static final List<DidChangePlatformBrightnessCallback>
+  _didChangePlatformBrightnessCallbacks = [];
+  static final List<DidChangeAppLifecycleStateCallback>
+  _didChangeAppLifecycleStateCallbacks = [];
+  static final List<DidHaveMemoryPressureCallback>
+  _didHaveMemoryPressureCallbacks = [];
 
   static final List<AppLaunchCallback> _appLaunchCallbacks = [];
+
+  static final List<VoidCallback> _activityWindowCallbacks = [];
+
+  static void registerActivityWindowCallback(VoidCallback callback) =>
+      _activityWindowCallbacks.add(callback);
+  static void unregisterActivityWindowCallback(VoidCallback callback) =>
+      _activityWindowCallbacks.remove(callback);
+
+  static void replayActivityWindowState() {
+    for (final callback in _activityWindowCallbacks) {
+      callback();
+    }
+  }
 
   final Widget child;
 
@@ -33,19 +55,39 @@ class AppManager extends StatefulWidget {
   @override
   State<AppManager> createState() => _AppManagerState();
 
-  static void registerDidChangePlatformBrightnessCallback(DidChangePlatformBrightnessCallback callback) {
+  static void registerDidChangePlatformBrightnessCallback(
+    DidChangePlatformBrightnessCallback callback,
+  ) {
     _didChangePlatformBrightnessCallbacks.add(callback);
   }
 
-  static void unRegisterDidChangePlatformBrightnessCallback(DidChangePlatformBrightnessCallback callback) {
+  static void unRegisterDidChangePlatformBrightnessCallback(
+    DidChangePlatformBrightnessCallback callback,
+  ) {
     _didChangePlatformBrightnessCallbacks.remove(callback);
   }
 
-  static void registerDidHaveMemoryPressureCallback(DidHaveMemoryPressureCallback callback) {
+  static void registerDidChangeAppLifecycleStateCallback(
+    DidChangeAppLifecycleStateCallback callback,
+  ) {
+    _didChangeAppLifecycleStateCallbacks.add(callback);
+  }
+
+  static void unRegisterDidChangeAppLifecycleStateCallback(
+    DidChangeAppLifecycleStateCallback callback,
+  ) {
+    _didChangeAppLifecycleStateCallbacks.remove(callback);
+  }
+
+  static void registerDidHaveMemoryPressureCallback(
+    DidHaveMemoryPressureCallback callback,
+  ) {
     _didHaveMemoryPressureCallbacks.add(callback);
   }
 
-  static void unRegisterDidHaveMemoryPressureCallback(DidHaveMemoryPressureCallback callback) {
+  static void unRegisterDidHaveMemoryPressureCallback(
+    DidHaveMemoryPressureCallback callback,
+  ) {
     _didHaveMemoryPressureCallbacks.remove(callback);
   }
 
@@ -70,6 +112,28 @@ class _AppManagerState extends State<AppManager> with WidgetsBindingObserver {
     super.initState();
 
     WidgetsBinding.instance.addObserver(this);
+    transferActivityService.navigationAllowed = () =>
+        _currentState == AppLifecycleState.resumed &&
+        !inBlur &&
+        !isRouteAtTop(Routes.lock);
+    transferActivityService.openTarget = (target) async {
+      final type = switch (target) {
+        'archive' => DownloadPageGalleryType.archive,
+        'cloud' => DownloadPageGalleryType.cloud,
+        _ => DownloadPageGalleryType.download,
+      };
+      toRoute(
+        Routes.download,
+        preventDuplicates: false,
+        arguments: TransferDownloadNavigation(
+          type,
+          showCloudTransfers: target == 'cloud',
+        ),
+      );
+    };
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => transferActivityService.navigationReady(),
+    );
 
     _listener = AppLifecycleListener(
       onInactive: _onInactive,
@@ -77,7 +141,14 @@ class _AppManagerState extends State<AppManager> with WidgetsBindingObserver {
       onStateChange: (AppLifecycleState state) => _currentState = state,
     );
 
+    _currentState =
+        WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.detached;
+    for (final callback in AppManager._didChangeAppLifecycleStateCallbacks) {
+      callback(_currentState);
+    }
+
     AppManager.registerAppLaunchCallback(_addSecureFlagForAndroid);
+    AppManager.registerActivityWindowCallback(_replayWindow);
     AppManager.registerDidChangePlatformBrightnessCallback(_changeTheme);
     AppManager.registerDidHaveMemoryPressureCallback(_logMemoryPressure);
 
@@ -91,14 +162,18 @@ class _AppManagerState extends State<AppManager> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _listener.dispose();
     AppManager.unRegisterAppLaunchCallback(_addSecureFlagForAndroid);
+    AppManager.unregisterActivityWindowCallback(_replayWindow);
     AppManager.unRegisterDidChangePlatformBrightnessCallback(_changeTheme);
     AppManager.unRegisterDidHaveMemoryPressureCallback(_logMemoryPressure);
+    transferActivityService.openTarget = null;
+    transferActivityService.navigationAllowed = null;
     super.dispose();
   }
 
   @override
   void didChangePlatformBrightness() {
-    for (DidChangePlatformBrightnessCallback callback in AppManager._didChangePlatformBrightnessCallbacks) {
+    for (DidChangePlatformBrightnessCallback callback
+        in AppManager._didChangePlatformBrightnessCallbacks) {
       callback.call();
     }
     super.didChangePlatformBrightness();
@@ -106,7 +181,8 @@ class _AppManagerState extends State<AppManager> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    for (DidChangeAppLifecycleStateCallback callback in AppManager._didChangeAppLifecycleStateCallbacks) {
+    for (DidChangeAppLifecycleStateCallback callback
+        in AppManager._didChangeAppLifecycleStateCallbacks) {
       callback.call(state);
     }
     super.didChangeAppLifecycleState(state);
@@ -115,7 +191,8 @@ class _AppManagerState extends State<AppManager> with WidgetsBindingObserver {
   @override
   void didHaveMemoryPressure() {
     if (_currentState == AppLifecycleState.resumed) {
-      for (DidHaveMemoryPressureCallback callback in AppManager._didHaveMemoryPressureCallbacks) {
+      for (DidHaveMemoryPressureCallback callback
+          in AppManager._didHaveMemoryPressureCallbacks) {
         callback.call();
       }
     }
@@ -129,7 +206,9 @@ class _AppManagerState extends State<AppManager> with WidgetsBindingObserver {
       child: inBlur
           ? Blur(
               blur: 100,
-              blurColor: GetPlatform.isAndroid ? Colors.white : Colors.grey.shade600,
+              blurColor: GetPlatform.isAndroid
+                  ? Colors.white
+                  : Colors.grey.shade600,
               colorOpacity: 1,
               child: widget.child,
             )
@@ -142,9 +221,15 @@ class _AppManagerState extends State<AppManager> with WidgetsBindingObserver {
       return;
     }
     if (PlatformDispatcher.instance.platformBrightness == Brightness.light) {
-      Get.rootController.theme = ThemeConfig.theme(styleSetting.lightThemeColor.value, Brightness.light);
+      Get.rootController.theme = ThemeConfig.theme(
+        styleSetting.lightThemeColor.value,
+        Brightness.light,
+      );
     } else {
-      Get.rootController.darkTheme = ThemeConfig.theme(styleSetting.darkThemeColor.value, Brightness.dark);
+      Get.rootController.darkTheme = ThemeConfig.theme(
+        styleSetting.darkThemeColor.value,
+        Brightness.dark,
+      );
     }
 
     Get.rootController.updateSafely();
@@ -161,13 +246,23 @@ class _AppManagerState extends State<AppManager> with WidgetsBindingObserver {
       lastInactiveTime ??= DateTime.now();
     }
 
-    if ((securitySetting.enableAuthOnResume.isTrue || securitySetting.enableBlur.isTrue) && !inBlur && !isRouteAtTop(Routes.lock)) {
+    if ((securitySetting.enableAuthOnResume.isTrue ||
+            securitySetting.enableBlur.isTrue) &&
+        !inBlur &&
+        !isRouteAtTop(Routes.lock)) {
       setState(() => inBlur = true);
     }
   }
 
+  void _removeBlur() {
+    if (!mounted) return;
+    setState(() => inBlur = false);
+    transferActivityService.navigationReady();
+  }
+
   void _onResume() {
     log.debug('App is shown');
+    transferActivityService.navigationReady();
 
     if (!inBlur) {
       return;
@@ -178,25 +273,30 @@ class _AppManagerState extends State<AppManager> with WidgetsBindingObserver {
     }
 
     if (securitySetting.enableAuthOnResume.isFalse) {
-      setState(() => inBlur = false);
+      _removeBlur();
       return;
     }
 
-    if ((securitySetting.enablePasswordAuth.isTrue || securitySetting.enableBiometricAuth.isTrue) &&
+    if ((securitySetting.enablePasswordAuth.isTrue ||
+            securitySetting.enableBiometricAuth.isTrue) &&
         DateTime.now().difference(lastInactiveTime!).inSeconds >= 3) {
       toRoute(Routes.lock);
-      Future.delayed(const Duration(milliseconds: 300), () => setState(() => inBlur = false));
+      Future.delayed(const Duration(milliseconds: 300), () => _removeBlur());
       lastInactiveTime = null;
     } else {
-      setState(() => inBlur = false);
+      _removeBlur();
       return;
     }
   }
 
   /// for Android, blur is invalid when switch app to background(app is still clearly visible in switcher),
   /// so i choose to set FLAG_SECURE to do the same effect.
+  void _replayWindow() => _addSecureFlagForAndroid(context);
+
   void _addSecureFlagForAndroid(BuildContext context) {
-    if (GetPlatform.isAndroid && (securitySetting.enableAuthOnResume.isTrue || securitySetting.enableBlur.isTrue)) {
+    if (GetPlatform.isAndroid &&
+        (securitySetting.enableAuthOnResume.isTrue ||
+            securitySetting.enableBlur.isTrue)) {
       FlutterWindowManagerPlus.addFlags(FlutterWindowManagerPlus.FLAG_SECURE);
     }
   }

@@ -17,6 +17,11 @@ class ReadPageInfo {
 
   String? galleryUrl;
 
+  /// Stable local-content identity, independent of download and archive tasks.
+  String? contentCopyId;
+
+  String? representation;
+
   int initialIndex;
 
   int currentImageIndex;
@@ -31,9 +36,6 @@ class ReadPageInfo {
   /// used for archive&local
   List<GalleryImage>? images;
 
-  /// used for initialize
-  bool useSuperResolution;
-
   ReadDirection? readDirection;
 
   ReadPageInfo({
@@ -42,12 +44,13 @@ class ReadPageInfo {
     this.token,
     required this.galleryTitle,
     this.galleryUrl,
+    this.contentCopyId,
+    this.representation,
     required this.initialIndex,
     required this.pageCount,
     this.isOriginal = false,
     required this.readProgressRecordStorageKey,
     this.images,
-    required this.useSuperResolution,
     this.readDirection,
   }) : currentImageIndex = initialIndex;
 }

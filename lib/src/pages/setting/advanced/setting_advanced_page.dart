@@ -6,10 +6,10 @@ import 'package:extended_image/extended_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:jhentai/src/extension/widget_extension.dart';
-import 'package:jhentai/src/model/config.dart';
 import 'package:jhentai/src/network/eh_request.dart';
 import 'package:jhentai/src/service/cloud_service.dart';
 import 'package:jhentai/src/setting/advanced_setting.dart';
@@ -20,13 +20,11 @@ import 'package:jhentai/src/widget/loading_state_indicator.dart';
 import 'package:path/path.dart';
 
 import '../../../config/ui_config.dart';
-import '../../../enum/config_type_enum.dart';
 import '../../../routes/routes.dart';
-import '../../../service/isolate_service.dart';
 import '../../../utils/byte_util.dart';
-import '../../../utils/permission_util.dart';
 import '../../../utils/route_util.dart';
-import '../../../widget/eh_config_type_select_dialog.dart';
+import '../../../widget/eh_local_backup_select_dialog.dart';
+import '../../../service/local_backup_service.dart';
 
 class SettingAdvancedPage extends StatefulWidget {
   const SettingAdvancedPage({Key? key}) : super(key: key);
@@ -67,8 +65,6 @@ class _SettingAdvancedPageState extends State<SettingAdvancedPage> {
             _buildClearLogs(context),
             _buildClearImageCache(context),
             _buildClearNetworkCache(),
-            if (GetPlatform.isDesktop) _buildSuperResolution(),
-            _buildCheckUpdate(),
             _buildCheckClipboard(),
             if (GetPlatform.isAndroid) _buildVerifyAppLinks(),
             if (GetPlatform.isAndroid) _buildRefreshRate(),
@@ -121,7 +117,7 @@ class _SettingAdvancedPageState extends State<SettingAdvancedPage> {
               style: TextStyle(color: UIConfig.resumePauseButtonColor(context), fontWeight: FontWeight.w500),
             ),
             errorTapCallback: _loadingLogSize,
-          ).marginOnly(right: 8)
+          ).marginOnly(right: 8),
         ],
       ),
       onLongPress: _clearAndLoadingLogSize,
@@ -143,7 +139,7 @@ class _SettingAdvancedPageState extends State<SettingAdvancedPage> {
               style: TextStyle(color: UIConfig.resumePauseButtonColor(context), fontWeight: FontWeight.w500),
             ),
             errorTapCallback: _getImagesCacheSize,
-          ).marginOnly(right: 8)
+          ).marginOnly(right: 8),
         ],
       ),
       onLongPress: _clearAndLoadingImageCacheSize,
@@ -158,22 +154,6 @@ class _SettingAdvancedPageState extends State<SettingAdvancedPage> {
         await ehRequest.removeAllCache();
         toast('clearSuccess'.tr, isCenter: false);
       },
-    );
-  }
-
-  Widget _buildSuperResolution() {
-    return ListTile(
-      title: Text('superResolution'.tr),
-      trailing: const Icon(Icons.keyboard_arrow_right).marginOnly(right: 4),
-      onTap: () => toRoute(Routes.superResolution),
-    );
-  }
-
-  Widget _buildCheckUpdate() {
-    return SwitchListTile(
-      title: Text('checkUpdateAfterLaunchingApp'.tr),
-      value: advancedSetting.enableCheckUpdate.value,
-      onChanged: advancedSetting.saveEnableCheckUpdate,
     );
   }
 
@@ -192,10 +172,7 @@ class _SettingAdvancedPageState extends State<SettingAdvancedPage> {
       trailing: const Icon(Icons.keyboard_arrow_right).marginOnly(right: 4),
       onTap: () async {
         try {
-          await const AndroidIntent(
-            action: 'android.settings.APP_OPEN_BY_DEFAULT_SETTINGS',
-            data: 'package:top.jtmonster.jhentai',
-          ).launch();
+          await const AndroidIntent(action: 'android.settings.APP_OPEN_BY_DEFAULT_SETTINGS', data: 'package:shiro.hclient').launch();
         } on Exception catch (e) {
           log.error(e);
           log.uploadError(e);
@@ -233,7 +210,7 @@ class _SettingAdvancedPageState extends State<SettingAdvancedPage> {
             successWidgetSameWithIdle: true,
             useCupertinoIndicator: true,
             errorWidgetSameWithIdle: true,
-          ).marginOnly(right: 8)
+          ).marginOnly(right: 8),
         ],
       ),
       onTap: () => _importData(context),
@@ -252,7 +229,7 @@ class _SettingAdvancedPageState extends State<SettingAdvancedPage> {
             successWidgetSameWithIdle: true,
             useCupertinoIndicator: true,
             errorWidgetSameWithIdle: true,
-          ).marginOnly(right: 8)
+          ).marginOnly(right: 8),
         ],
       ),
       onTap: () => _exportData(context),
@@ -297,21 +274,21 @@ class _SettingAdvancedPageState extends State<SettingAdvancedPage> {
     setStateSafely(() => _imageCacheLoadingState = LoadingState.loading);
 
     try {
-      _imageCacheSize = await compute(
-        (dirPath) {
-          Directory cacheImagesDirectory = Directory(dirPath);
+      _imageCacheSize = await compute((dirPath) {
+        Directory cacheImagesDirectory = Directory(dirPath);
 
-          int totalBytes;
-          if (!cacheImagesDirectory.existsSync()) {
-            totalBytes = 0;
-          } else {
-            totalBytes = cacheImagesDirectory.listSync().fold<int>(0, (previousValue, element) => previousValue += (element as File).lengthSync());
-          }
+        int totalBytes;
+        if (!cacheImagesDirectory.existsSync()) {
+          totalBytes = 0;
+        } else {
+          totalBytes = cacheImagesDirectory.listSync().fold<int>(
+            0,
+            (previousValue, element) => previousValue += (element as File).lengthSync(),
+          );
+        }
 
-          return byte2String(totalBytes.toDouble());
-        },
-        join(pathService.tempDir.path, cacheImageFolderName),
-      );
+        return byte2String(totalBytes.toDouble());
+      }, join(pathService.tempDir.path, cacheImageFolderName));
     } catch (e) {
       log.error(e);
       _imageCacheSize = '-1B';
@@ -334,148 +311,87 @@ class _SettingAdvancedPageState extends State<SettingAdvancedPage> {
   }
 
   Future<void> _importData(BuildContext context) async {
-    FilePickerResult? result;
+    if (_importDataLoadingState == LoadingState.loading) return;
     try {
-      result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['json'],
-        allowCompression: false,
-        compressionQuality: 0,
+      final file = await FilePicker.pickFile(type: FileType.custom, allowedExtensions: ['json']);
+      if (file == null) return;
+      setStateSafely(() => _importDataLoadingState = LoadingState.loading);
+      final contents = utf8.decode(await file.readAsBytes());
+      final available = localBackupService.availableSelection(contents);
+      if (!mounted) return;
+      final selection = await showDialog<LocalBackupSelection>(
+        context: context,
+        builder: (_) => EHLocalBackupSelectDialog(available: available, restore: true),
       );
-    } on Exception catch (e) {
-      log.error('Pick import data file failed', e);
-      return;
-    }
-
-    if (result == null) {
-      return;
-    }
-
-    if (_importDataLoadingState == LoadingState.loading) {
-      return;
-    }
-
-    log.info('Import data from ${result.files.first.path}');
-    setStateSafely(() => _importDataLoadingState = LoadingState.loading);
-
-    File file = File(result.files.first.path!);
-    String string = await file.readAsString();
-
-    try {
-      List list = await isolateService.jsonDecodeAsync(string);
-      List<CloudConfig> configs = list.map((e) => CloudConfig.fromJson(e)).toList();
-      for (CloudConfig config in configs) {
-        await cloudConfigService.importConfig(config);
+      if (selection == null || selection.isEmpty) {
+        setStateSafely(() => _importDataLoadingState = LoadingState.idle);
+        return;
       }
-
-      toast('success'.tr);
+      final result = await localBackupService.import(contents, selection: selection);
+      if (mounted) {
+        await showDialog<void>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text((result.needsRestart ? 'needRestart' : 'success').tr),
+            content: Text(
+              (result.legacy
+                      ? 'legacyBackupHint'
+                      : result.needsRestart
+                      ? 'backupRestartHint'
+                      : 'success')
+                  .tr,
+            ),
+            actions: [
+              if (result.needsRestart && GetPlatform.isAndroid)
+                TextButton(onPressed: SystemNavigator.pop, child: Text('closeAppForRestore'.tr))
+              else
+                TextButton(onPressed: () => Navigator.pop(context), child: Text('OK'.tr)),
+            ],
+          ),
+        );
+      }
       setStateSafely(() => _importDataLoadingState = LoadingState.success);
-    } catch (e, s) {
-      log.error('Import data failed', e, s);
+    } catch (e, stack) {
+      log.error('Import data failed (${e.runtimeType})', null, stack);
       toast('internalError'.tr);
       setStateSafely(() => _importDataLoadingState = LoadingState.error);
-      return;
     }
   }
 
   Future<void> _exportData(BuildContext context) async {
-    List<CloudConfigTypeEnum>? result = await showDialog(
+    LocalBackupSelection? result = await showDialog<LocalBackupSelection>(
       context: context,
-      builder: (_) => EHConfigTypeSelectDialog(title: 'selectExportItems'.tr),
+      builder: (_) => const EHLocalBackupSelectDialog(),
     );
     if (result?.isEmpty ?? true) {
       return;
     }
 
     String fileName = '${CloudConfigService.configFileName}-${DateFormat('yyyyMMddHHmmss').format(DateTime.now())}.json';
-    if (GetPlatform.isMobile) {
-      return _exportDataMobile(fileName, result);
-    } else {
-      return _exportDataDesktop(fileName, result);
-    }
+    return _exportSelectedConfig(fileName, result!);
   }
 
-  Future<void> _exportDataMobile(String fileName, List<CloudConfigTypeEnum>? result) async {
-    if (_exportDataLoadingState == LoadingState.loading) {
-      return;
-    }
+  Future<void> _exportSelectedConfig(String fileName, LocalBackupSelection selection) async {
+    if (_exportDataLoadingState == LoadingState.loading) return;
     setStateSafely(() => _exportDataLoadingState = LoadingState.loading);
-
-    List<CloudConfig> uploadConfigs = [];
-    for (CloudConfigTypeEnum type in result!) {
-      CloudConfig? config = await cloudConfigService.getLocalConfig(type);
-      if (config != null) {
-        uploadConfigs.add(config);
-      }
-    }
-
     try {
-      String? savedPath = await FilePicker.platform.saveFile(
+      final contents = await localBackupService.export(selection);
+      final savedUri = await FilePicker.saveFile(
         fileName: fileName,
-        type: FileType.custom,
-        allowedExtensions: ['json'],
-        bytes: utf8.encode(await isolateService.jsonEncodeAsync(uploadConfigs)),
-        lockParentWindow: true,
+        bytes: utf8.encode(contents),
+        mimeType: 'application/json',
+        windowsOptions: const WindowsOptions(lockParentWindow: true),
       );
-      if (savedPath != null) {
-        log.info('Export data to $savedPath success');
-        toast('success'.tr);
-        setStateSafely(() => _exportDataLoadingState = LoadingState.success);
+      if (savedUri == null) {
+        setStateSafely(() => _exportDataLoadingState = LoadingState.idle);
+        return;
       }
-    } on Exception catch (e) {
-      log.error('Export data failed', e);
-      toast('internalError'.tr);
-      setStateSafely(() => _exportDataLoadingState = LoadingState.error);
-    }
-  }
-
-  Future<void> _exportDataDesktop(String fileName, List<CloudConfigTypeEnum>? result) async {
-    if (_exportDataLoadingState == LoadingState.loading) {
-      return;
-    }
-    setStateSafely(() => _exportDataLoadingState = LoadingState.loading);
-
-    String? savedPath;
-    try {
-      savedPath = await FilePicker.platform.saveFile(
-        fileName: fileName,
-        type: FileType.custom,
-        allowedExtensions: ['json'],
-        lockParentWindow: true,
-      );
-    } on Exception catch (e) {
-      log.error('Select save path for exporting data failed', e);
-      toast('internalError'.tr);
-      setStateSafely(() => _exportDataLoadingState = LoadingState.error);
-      return;
-    }
-
-    if (savedPath == null) {
-      return;
-    }
-
-    List<CloudConfig> uploadConfigs = [];
-    for (CloudConfigTypeEnum type in result!) {
-      CloudConfig? config = await cloudConfigService.getLocalConfig(type);
-      if (config != null) {
-        uploadConfigs.add(config);
-      }
-    }
-
-    File file = File(savedPath);
-    try {
-      if (await file.exists()) {
-        await file.create(recursive: true);
-      }
-      await file.writeAsString(await isolateService.jsonEncodeAsync(uploadConfigs));
-      log.info('Export data to $savedPath success');
       toast('success'.tr);
       setStateSafely(() => _exportDataLoadingState = LoadingState.success);
-    } on Exception catch (e) {
-      log.error('Export data failed', e);
+    } catch (e, stack) {
+      log.error('Export data failed (${e.runtimeType})', null, stack);
       toast('internalError'.tr);
       setStateSafely(() => _exportDataLoadingState = LoadingState.error);
-      file.delete().ignore();
     }
   }
 }

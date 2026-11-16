@@ -5,6 +5,7 @@ import 'package:jhentai/src/utils/file_util.dart';
 import 'package:path/path.dart' as path;
 
 import '../path_service.dart';
+import '../local_content_service.dart';
 
 /// Pure path-computation helpers for gallery download storage. No state —
 /// all methods are static and read singletons ([downloadSetting], [pathService]).
@@ -21,9 +22,15 @@ class DownloadPathResolver {
   /// Compute the sanitized title for the first time. Strips illegal file-name
   /// characters then truncates to fit within [maxFileNameBytes] bytes minus
   /// [reservedBytes] (the byte length of the surrounding prefix).
-  static String computeSanitizedGalleryTitle(String rawTitle, int reservedBytes) {
+  static String computeSanitizedGalleryTitle(
+    String rawTitle,
+    int reservedBytes,
+  ) {
     String title = rawTitle.replaceAll(RegExp(r'[/|?,:*"<>\\.]'), ' ').trim();
-    return FileUtil.truncateTitleToBytes(title, maxFileNameBytes - reservedBytes);
+    return FileUtil.truncateTitleToBytes(
+      title,
+      maxFileNameBytes - reservedBytes,
+    );
   }
 
   /// Reproduce the pre-sanitizedTitle gallery directory naming rule.
@@ -55,12 +62,15 @@ class DownloadPathResolver {
     required String? persistedSanitizedTitle,
     required String galleryDirectoryPath,
   }) {
-    final String directoryName = path.basename(path.normalize(galleryDirectoryPath));
+    final String directoryName = path.basename(
+      path.normalize(galleryDirectoryPath),
+    );
     final String prefix = '$gid - ';
     if (directoryName.startsWith(prefix)) {
       return directoryName.substring(prefix.length);
     }
-    return persistedSanitizedTitle ?? computeLegacySanitizedGalleryTitle(rawTitle);
+    return persistedSanitizedTitle ??
+        computeLegacySanitizedGalleryTitle(rawTitle);
   }
 
   /// Reproduce the pre-sanitizedTitle archive unpacking-directory naming rule.
@@ -89,7 +99,9 @@ class DownloadPathResolver {
     required String? persistedSanitizedTitle,
     required String archiveDirectoryPath,
   }) {
-    final String directoryName = path.basename(path.normalize(archiveDirectoryPath));
+    final String directoryName = path.basename(
+      path.normalize(archiveDirectoryPath),
+    );
     final String prefix = 'Archive - $gid - ';
     if (directoryName.startsWith(prefix)) {
       return directoryName.substring(prefix.length);
@@ -98,13 +110,29 @@ class DownloadPathResolver {
   }
 
   /// Directory name format: '{gid} - {title}'
-  static String computeGalleryDownloadAbsolutePath(GalleryDownloadedData gallery) {
-    return path.join(downloadSetting.downloadPath.value, '${gallery.gid} - ${gallery.sanitizedTitle}');
+  static String computeGalleryDownloadAbsolutePath(
+    GalleryDownloadedData gallery,
+  ) {
+    if (gallery.copyId case final id?) {
+      final root = localContentService.registeredRoot(id);
+      if (root == null) throw StateError('Content copy is unavailable: $id');
+      return root;
+    }
+    return path.join(
+      downloadSetting.downloadPath.value,
+      '${gallery.gid} - ${gallery.sanitizedTitle ?? computeLegacySanitizedGalleryTitle(gallery.title)}',
+    );
   }
 
-  static String computeImageDownloadAbsolutePath(GalleryDownloadedData gallery, String imageUrl, int serialNo) {
+  static String computeImageDownloadAbsolutePath(
+    GalleryDownloadedData gallery,
+    String imageUrl,
+    int serialNo,
+  ) {
     /// original image's url doesn't has an ext
-    String? ext = imageUrl.contains('fullimg.php') ? 'jpg' : imageUrl.split('.').last;
+    String? ext = imageUrl.contains('fullimg.php')
+        ? 'jpg'
+        : imageUrl.split('.').last;
 
     return path.join(
       computeGalleryDownloadAbsolutePath(gallery),
@@ -112,14 +140,20 @@ class DownloadPathResolver {
     );
   }
 
-  static String computeImageDownloadRelativePath(GalleryDownloadedData gallery, String imageUrl, int serialNo) {
+  static String computeImageDownloadRelativePath(
+    GalleryDownloadedData gallery,
+    String imageUrl,
+    int serialNo,
+  ) {
     return path.relative(
       computeImageDownloadAbsolutePath(gallery, imageUrl, serialNo),
       from: pathService.getVisibleDir().path,
     );
   }
 
-  static String computeImageDownloadAbsolutePathFromRelativePath(String imageRelativePath) {
+  static String computeImageDownloadAbsolutePathFromRelativePath(
+    String imageRelativePath,
+  ) {
     String p = path.join(pathService.getVisibleDir().path, imageRelativePath);
 
     /// I don't know why some images can't be loaded on Windows... If you knows, please tell me
@@ -127,6 +161,9 @@ class DownloadPathResolver {
       return p;
     }
 
-    return path.join(path.rootPrefix(p), path.relative(p, from: path.rootPrefix(p)));
+    return path.join(
+      path.rootPrefix(p),
+      path.relative(p, from: path.rootPrefix(p)),
+    );
   }
 }

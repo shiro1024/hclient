@@ -1,7 +1,10 @@
 import 'package:jhentai/src/setting/eh_setting.dart';
 
 class EHConsts {
-  static const String appName = "JHenTai";
+  static const String appName = "hClient";
+
+  // Keep the existing temporary download directory independent of the display name.
+  static const String tempDownloadDirectoryName = "JHenTai";
 
   static String get EIndex => ehSetting.site.value == 'EH' ? EHIndex : EXIndex;
 

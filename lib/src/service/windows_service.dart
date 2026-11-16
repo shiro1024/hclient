@@ -7,10 +7,9 @@ import 'package:jhentai/src/enum/config_enum.dart';
 import 'package:jhentai/src/service/local_config_service.dart';
 import 'package:jhentai/src/utils/screen_size_util.dart';
 import 'package:throttling/throttling.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:window_manager/legacy.dart';
 
 import '../setting/preference_setting.dart';
-import 'app_update_service.dart';
 import 'jh_service.dart';
 import 'log.dart';
 
@@ -30,7 +29,7 @@ class WindowService with JHLifeCircleBeanErrorCatch implements JHLifeCircleBean 
   final Debouncing columnResizedDebouncing = Debouncing(duration: const Duration(milliseconds: 300));
 
   @override
-  List<JHLifeCircleBean> get initDependencies => super.initDependencies..addAll([localConfigService, preferenceSetting, appUpdateService]);
+  List<JHLifeCircleBean> get initDependencies => super.initDependencies..addAll([localConfigService, preferenceSetting]);
 
   @override
   Future<void> doInitBean() async {
@@ -50,7 +49,7 @@ class WindowService with JHLifeCircleBeanErrorCatch implements JHLifeCircleBean 
         size: Size(windowWidth, windowHeight),
         backgroundColor: Colors.transparent,
         skipTaskbar: false,
-        title: 'JHenTai',
+        title: 'hClient',
         titleBarStyle: GetPlatform.isWindows ? TitleBarStyle.hidden : TitleBarStyle.normal,
       );
 

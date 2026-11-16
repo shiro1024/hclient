@@ -50,10 +50,18 @@ add_subdirectory("runner")
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
+# Keep upstream clipboard warnings visible without treating them as errors.
+get_target_property(CLIPBOARD_COMPILE_OPTIONS clipboard_plugin COMPILE_OPTIONS)
+list(REMOVE_ITEM CLIPBOARD_COMPILE_OPTIONS /WX)
+set_property(TARGET clipboard_plugin PROPERTY COMPILE_OPTIONS ${CLIPBOARD_COMPILE_OPTIONS})
+
+# Expose the package root containing clipboard/clipboard_plugin.h to the runner.
+target_include_directories(clipboard_plugin INTERFACE "${FLUTTER_MANAGED_DIR}/ephemeral/.plugin_symlinks/clipboard")
+
 
 # === Installation ===
 # Support files are copied into place next to the executable, so that it can
-# run in place. This is done instead of making a separate bundle (as on Linux)
+# run in place. This is done instead of making a separate bundle
 # so that building and running from within Visual Studio will work.
 set(BUILD_BUNDLE_DIR "$<TARGET_FILE_DIR:${BINARY_NAME}>")
 # Make the "install" step default, as it's required to run.
@@ -79,6 +87,12 @@ if(PLUGIN_BUNDLED_LIBRARIES)
     DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
     COMPONENT Runtime)
 endif()
+
+# Copy the native assets provided by the hook/build.dart from all packages.
+set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/windows/")
+install(DIRECTORY "${NATIVE_ASSETS_DIR}"
+   DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+   COMPONENT Runtime)
 
 # Fully re-copy the assets directory on each build to avoid having stale files
 # from a previous install.

@@ -19,7 +19,11 @@ import '../../mixin/basic/multi_select/multi_select_download_page_state_mixin.da
 import 'gallery_list_download_page_state.dart';
 
 class GalleryListDownloadPageLogic extends GetxController
-    with Scroll2TopLogicMixin, MultiSelectDownloadPageLogicMixin<GalleryDownloadInfo>, GalleryDownloadPageLogicMixin, UpdateGlobalGalleryStatusLogicMixin {
+    with
+        Scroll2TopLogicMixin,
+        MultiSelectDownloadPageLogicMixin<GalleryDownloadInfo>,
+        GalleryDownloadPageLogicMixin,
+        UpdateGlobalGalleryStatusLogicMixin {
   GalleryListDownloadPageState state = GalleryListDownloadPageState();
 
   @override

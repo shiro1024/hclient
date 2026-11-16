@@ -12,8 +12,6 @@ import 'package:jhentai/src/pages/details/details_page_logic.dart';
 import 'package:jhentai/src/pages/gallery_image/gallery_image_page_state.dart';
 import 'package:jhentai/src/routes/routes.dart';
 import 'package:jhentai/src/service/gallery_download/gallery_download_service.dart';
-import 'package:jhentai/src/service/storage_service.dart';
-import 'package:jhentai/src/service/super_resolution_service.dart';
 import 'package:jhentai/src/service/tag_translation_service.dart';
 import 'package:jhentai/src/utils/eh_spider_parser.dart';
 import 'package:jhentai/src/utils/route_util.dart';

@@ -5,6 +5,7 @@ import 'package:jhentai/src/pages/search/mobile_v2/search_page_mobile_v2_logic.d
 import 'package:jhentai/src/pages/search/mobile_v2/search_page_mobile_v2_state.dart';
 import 'package:jhentai/src/routes/routes.dart';
 import 'package:jhentai/src/setting/preference_setting.dart';
+import 'package:jhentai/src/widget/edge_drawer_scope.dart';
 import 'package:jhentai/src/utils/route_util.dart';
 import 'package:jhentai/src/utils/uuid_util.dart';
 
@@ -14,8 +15,7 @@ import '../mixin/search_page_mixin.dart';
 import '../mixin/search_page_state_mixin.dart';
 import '../quick_search/quick_search_page.dart';
 
-class SearchPageMobileV2 extends BasePage<SearchPageMobileV2Logic, SearchPageMobileV2State>
-    with SearchPageMixin<SearchPageMobileV2Logic, SearchPageMobileV2State> {
+class SearchPageMobileV2 extends BasePage<SearchPageMobileV2Logic, SearchPageMobileV2State> with SearchPageMixin<SearchPageMobileV2Logic, SearchPageMobileV2State> {
   final String tag = newUUID();
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
   SearchPageMobileV2({Key? key}) : super(key: key, showJumpButton: true, showScroll2TopButton: true) {
@@ -35,15 +35,19 @@ class SearchPageMobileV2 extends BasePage<SearchPageMobileV2Logic, SearchPageMob
       global: false,
       init: logic,
       builder: (_) => Obx(
-        () => Scaffold(
-          key: scaffoldKey,
-          appBar: buildAppBar(context),
-          drawerEdgeDragWidth: preferenceSetting.drawerGestureEdgeWidth.value.toDouble(),
-          endDrawer: Drawer(width: 278, child: QuickSearchPage(scrollController: quickSearchService.drawerScrollController)),
-          endDrawerEnableOpenDragGesture: preferenceSetting.enableQuickSearchDrawerGesture.isTrue,
-          body: SafeArea(child: buildBody(context)),
-          floatingActionButton: buildFloatingActionButton(),
-          resizeToAvoidBottomInset: false,
+        () => EdgeDrawerScope(
+          scaffoldKey: scaffoldKey,
+          rightEnabled: preferenceSetting.enableQuickSearchDrawerGesture.isTrue,
+          builder: (context, drawersChanged) => Scaffold(
+            key: scaffoldKey,
+            appBar: buildAppBar(context),
+            endDrawer: Drawer(width: 278, child: QuickSearchPage(scrollController: quickSearchService.drawerScrollController)),
+            endDrawerEnableOpenDragGesture: preferenceSetting.enableQuickSearchDrawerGesture.isTrue,
+            onEndDrawerChanged: (_) => drawersChanged(),
+            body: SafeArea(child: buildBody(context)),
+            floatingActionButton: buildFloatingActionButton(),
+            resizeToAvoidBottomInset: false,
+          ),
         ),
       ),
     );
@@ -76,18 +80,12 @@ class SearchPageMobileV2 extends BasePage<SearchPageMobileV2Logic, SearchPageMob
             id: logic.suggestionBodyId,
             global: false,
             init: logic,
-            builder: (_) => state.inputGalleryUrl == null && state.inputGalleryImagePageUrl == null
-                ? Expanded(child: buildSuggestionAndHistoryBody(context))
-                : buildOpenGalleryArea(),
+            builder: (_) =>
+                state.inputGalleryUrl == null && state.inputGalleryImagePageUrl == null ? Expanded(child: buildSuggestionAndHistoryBody(context)) : buildOpenGalleryArea(),
           )
         else if (state.hasSearched)
           Expanded(
-            child: GetBuilder<SearchPageMobileV2Logic>(
-              id: logic.galleryBodyId,
-              global: false,
-              init: logic,
-              builder: (_) => super.buildBody(context),
-            ),
+            child: GetBuilder<SearchPageMobileV2Logic>(id: logic.galleryBodyId, global: false, init: logic, builder: (_) => super.buildBody(context)),
           ),
       ],
     );

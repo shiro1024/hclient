@@ -17,11 +17,16 @@ mixin JHLifeCircleBeanErrorCatch {
   List<JHLifeCircleBean> get initDependencies => [pathService, log];
 
   Future<void> initBean() async {
+    final timer = Stopwatch()..start();
     try {
       await doInitBean();
-      log.debug('Init $runtimeType success');
+      log.debug('Init $runtimeType success (${timer.elapsedMilliseconds}ms)');
     } catch (e, stack) {
-      log.error('Init $runtimeType failed', e, stack);
+      log.error(
+        'Init $runtimeType failed (${timer.elapsedMilliseconds}ms)',
+        e,
+        stack,
+      );
     }
   }
 
@@ -45,6 +50,7 @@ mixin JHLifeCircleBeanWithConfigStorage {
   ConfigEnum get configEnum;
 
   Future<void> initBean() async {
+    final timer = Stopwatch()..start();
     try {
       await doInitBean();
 
@@ -53,9 +59,13 @@ mixin JHLifeCircleBeanWithConfigStorage {
         applyBeanConfig(configString);
       }
 
-      log.debug(configString == null ? 'Init $runtimeType config success with default' : 'Init $runtimeType config success');
+      log.debug('${configString == null ? 'Init $runtimeType config success with default' : 'Init $runtimeType config success'} (${timer.elapsedMilliseconds}ms)');
     } catch (e, stack) {
-      log.error('Init $runtimeType config failed', e, stack);
+      log.error(
+        'Init $runtimeType config failed (${timer.elapsedMilliseconds}ms)',
+        e,
+        stack,
+      );
     }
   }
 

@@ -37,7 +37,8 @@ class HorizontalPageLayout extends BaseLayout {
           scaleStateCycle: readSetting.enableDoubleTapToScaleUp.isTrue ? logic.scaleStateCycle : null,
           enableTapDragZoom: readSetting.enableTapDragToScaleUp.isTrue,
           child: Obx(() {
-            Widget item = readPageState.readPageInfo.mode == ReadMode.online ? buildItemInOnlineMode(context, index) : buildItemInLocalMode(context, index);
+            Widget item =
+                readPageState.readPageInfo.mode == ReadMode.online ? buildItemInOnlineMode(context, index) : buildItemInLocalMode(context, index);
 
             if (logic.readPageLogic.isInFitWidthReadDirection) {
               item = Center(child: SingleChildScrollView(controller: ScrollController(), child: item));

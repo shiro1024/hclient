@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:window_manager/legacy.dart';
 
 import '../config/ui_config.dart';
 import '../service/windows_service.dart';
@@ -46,13 +46,6 @@ mixin WindowWidgetMixin<T extends StatefulWidget> on State<T>, WindowListener {
   }
 
   @override
-  void onWindowResize() {
-    if (GetPlatform.isLinux) {
-      windowService.handleWindowResized();
-    }
-  }
-
-  @override
   void onWindowResized() {
     windowService.handleWindowResized();
   }
@@ -75,11 +68,9 @@ mixin WindowWidgetMixin<T extends StatefulWidget> on State<T>, WindowListener {
     return wrapKeyboardListener(
       child: GetPlatform.isWindows
           ? buildWindowsTitle(child)
-          : GetPlatform.isLinux
-              ? buildLinuxTitle(child)
-              : GetPlatform.isMacOS
-                  ? buildMaxOSTitle(child)
-                  : child,
+          : GetPlatform.isMacOS
+              ? buildMaxOSTitle(child)
+              : child,
     );
   }
 
@@ -102,7 +93,8 @@ mixin WindowWidgetMixin<T extends StatefulWidget> on State<T>, WindowListener {
         ColoredBox(
           color: titleBarColor ?? UIConfig.backGroundColor(context),
           child: windowService.isFullScreen
-              ? Container(height: fullScreenTopPadding ?? UIConfig.desktopFullScreenTopPadding, color: titleBarColor ?? UIConfig.backGroundColor(context))
+              ? Container(
+                  height: fullScreenTopPadding ?? UIConfig.desktopFullScreenTopPadding, color: titleBarColor ?? UIConfig.backGroundColor(context))
               : Row(
                   children: [
                     Expanded(
@@ -115,22 +107,14 @@ mixin WindowWidgetMixin<T extends StatefulWidget> on State<T>, WindowListener {
                     ),
                     WindowCaptionButton.minimize(brightness: titleBarBrightness ?? Theme.of(context).brightness, onPressed: toggleMinimize),
                     if (windowService.isMaximized)
-                      WindowCaptionButton.unmaximize(brightness: titleBarBrightness ?? Theme.of(context).brightness, onPressed: windowManager.unmaximize),
+                      WindowCaptionButton.unmaximize(
+                          brightness: titleBarBrightness ?? Theme.of(context).brightness, onPressed: windowManager.unmaximize),
                     if (!windowService.isMaximized)
                       WindowCaptionButton.maximize(brightness: titleBarBrightness ?? Theme.of(context).brightness, onPressed: windowManager.maximize),
                     WindowCaptionButton.close(brightness: titleBarBrightness ?? Theme.of(context).brightness, onPressed: windowManager.close),
                   ],
                 ),
         ),
-        Expanded(child: child),
-      ],
-    );
-  }
-
-  Widget buildLinuxTitle(Widget child) {
-    return Column(
-      children: [
-        Container(height: 8, color: titleBarColor ?? UIConfig.backGroundColor(context)),
         Expanded(child: child),
       ],
     );

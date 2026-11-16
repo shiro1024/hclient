@@ -8,7 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../service/log.dart';
 
 Future<void> requestStoragePermission() async {
-  if (!GetPlatform.isMacOS && !GetPlatform.isLinux) {
+  if (!GetPlatform.isMacOS) {
     try {
       await Permission.manageExternalStorage.request().isGranted;
       log.info(await Permission.manageExternalStorage.status);

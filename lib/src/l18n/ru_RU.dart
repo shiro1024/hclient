@@ -3,6 +3,9 @@ import 'dart:core';
 class ru_RU {
   static Map<String, String> keys() {
     return {
+      'readingImageSourceSize': 'Исходный @size',
+      'readingImageStoredSize': 'На диске @size',
+
       /// common
       'yes': 'Да',
       'no': 'Нет',
@@ -54,13 +57,6 @@ class ru_RU {
       /// start page
       'TapAgainToExit': 'Нажмите еще раз для выхода',
 
-      /// update dialog
-      'availableUpdate': 'Доступно обновление!',
-      'LatestVersion': 'Последняя версия',
-      'CurrentVersion': 'Текущая версия',
-      'check': 'Проверить',
-      'dismiss': 'Закрыть',
-
       /// login page
       'login': 'Вход',
       'notLoggedIn': 'Войти',
@@ -77,7 +73,8 @@ class ru_RU {
       'skipVerification': 'Пропустить проверку',
       'assist': 'ассист.',
       'onlineVerificationHint': 'Проверка через HTTP-запрос',
-      'webviewVerificationHint': 'Проверка через WebView (используйте при сбое онлайн-проверки)',
+      'webviewVerificationHint':
+          'Проверка через WebView (используйте при сбое онлайн-проверки)',
       'skipVerificationHint': 'Сохранить напрямую без проверки',
       'igneousFieldHint': 'Только для сайта EX; для EH можно оставить пустым',
       'clipboardCookieDetected': 'Cookie найден в буфере обмена и заполнен',
@@ -91,7 +88,8 @@ class ru_RU {
       'userName': 'Имя пользователя',
       'EHUser': 'Пользователь EH',
       'password': 'Пароль',
-      'needCaptcha': 'Требуется капча, пожалуйста, войдите снова через cookie или веб.',
+      'needCaptcha':
+          'Требуется капча, пожалуйста, войдите снова через cookie или веб.',
       'userNameOrPasswordMismatch': 'Неверное имя пользователя или пароль',
       'copyCookies': 'Скопировать Cookies',
       'tap2Copy': 'Нажмите, чтобы скопировать',
@@ -106,7 +104,8 @@ class ru_RU {
       /// request
       'sadPanda': 'Sad Panda (нет данных). См.: https://github.com/jiangtian616/JHenTai/wiki/Common-Questions',
       // Оставляем Sad Panda
-      'sadPandaReferLink': 'https://github.com/jiangtian616/JHenTai/wiki/Common-Questions',
+      'sadPandaReferLink':
+          'https://github.com/jiangtian616/JHenTai/wiki/Common-Questions',
       // URL не переводим
 
       /// gallery card
@@ -149,14 +148,16 @@ class ru_RU {
       'cloudflare403': 'You have been restricted by Cloudflare from making network requests. Please try switching networks or using another login method.',
       'invisible2User': 'Эта галерея невидима для Вас',
       'invisibleHints': 'Эта галерея удалена или недоступна.',
-      'copyRightHints': 'Эта галерея недоступна из-за претензии по авторским правам от: ',
+      'copyRightHints':
+          'Эта галерея недоступна из-за претензии по авторским правам от: ',
       'refreshGalleryDetailsFailed': 'Не удалось обновить детали галереи',
       'failToGetThumbnails': "Не удалось получить миниатюры",
       'favoriteGallerySuccess': "Галерея успешно добавлена в избранное",
       'favoriteGalleryFailed': "Не удалось добавить галерею в избранное",
       'removeFavoriteSuccess': "Успешно удалено из избранного",
       'removeFavoriteFailed': "Не удалось удалить из избранного",
-      'getGalleryFavoriteInfoFailed': 'Не удалось получить информацию об избранном для галереи',
+      'getGalleryFavoriteInfoFailed':
+          'Не удалось получить информацию об избранном для галереи',
       'favoriteNoteSlotFullHint': 'Слоты заметок избранного заполнены, пожалуйста, сначала удалите некоторые заметки',
       'ratingSuccess': 'Рейтинг успешно выставлен',
       'ratingFailed': 'Не удалось выставить рейтинг',
@@ -165,12 +166,15 @@ class ru_RU {
       'resumeDownload': 'Возобновить загрузку',
       'pauseDownload': 'Приостановить загрузку',
       'addNewTagSetSuccess': 'Новый набор тегов успешно добавлен',
-      'addNewWatchedTagSetSuccess': 'Новый набор отслеживаемых тегов успешно добавлен',
+      'addNewWatchedTagSetSuccess':
+          'Новый набор отслеживаемых тегов успешно добавлен',
       'addNewHiddenTagSetSuccess': 'Новый набор скрытых тегов успешно добавлен',
-      'addNewTagSetSuccessHint': 'Вы можете проверить свои теги в Настройки -> EH -> Мои теги',
+      'addNewTagSetSuccessHint':
+          'Вы можете проверить свои теги в Настройки -> EH -> Мои теги',
       'addNewTagSetFailed': 'Не удалось добавить новый набор тегов',
       'VisitorStatistics': 'Статистика посетителей',
-      'invisible2UserWithoutDonation': 'Статистика этой галереи невидима для пользователей без доната',
+      'invisible2UserWithoutDonation':
+          'Статистика этой галереи невидима для пользователей без доната',
       'getGalleryStatisticsFailed': 'Не удалось получить статистику галереи',
       'totalVisits': 'Всего посещений',
       'visits': 'Посещений',
@@ -184,7 +188,8 @@ class ru_RU {
       'original': 'Оригинал',
       'resample': 'Уменьшенная',
       'beginToDownloadArchive': 'Начать загрузку архива',
-      'beginToDownloadArchiveHint': 'Вы можете проверить прогресс в Загрузки -> Архив',
+      'beginToDownloadArchiveHint':
+          'Вы можете проверить прогресс в Загрузки -> Архив',
       'updateGalleryError': 'Ошибка обновления галереи',
       'thisGalleryHasANewVersion': 'У этой галереи есть новая версия',
       'hasUpdated': 'Обновлено',
@@ -193,11 +198,12 @@ class ru_RU {
       'hasDownloaded': 'Уже загружено',
       '410Hints': 'Вы скачали слишком много байт из этого архива, и требуется повторная разблокировка для возобновления.',
       '429Hints': 'Слишком много запросов на загрузку! Вам лучше уменьшить количество одновременных загрузок архивов.',
-      'getUnpackedImagesFailedMsg': 'JHenTai не может загрузить изображения этого архива, пожалуйста, проверьте локальный файл.',
+      'getUnpackedImagesFailedMsg': 'hClient не может загрузить изображения этого архива, пожалуйста, проверьте локальный файл.',
       // Оставляем JHenTai
       'getGalleryTorrentsFailed': 'Не удалось получить торренты',
       'chooseArchive': 'Выбрать архив',
-      'tagSetExceedLimit': 'Нельзя добавить больше тегов, так как вы достигли лимита',
+      'tagSetExceedLimit':
+          'Нельзя добавить больше тегов, так как вы достигли лимита',
       'useTranslation': 'Использовать перевод',
       'addTagSuccess': 'Тег успешно добавлен',
       'addTagFailed': 'Не удалось добавить тег',
@@ -224,10 +230,11 @@ class ru_RU {
       'commentTooShort': 'Комментарий слишком короткий',
       'sendCommentFailed': 'Не удалось отправить комментарий',
       'voteCommentFailed': 'Не удалось проголосовать за комментарий',
-      'voteCommentFailedHint': 'Попробуйте сначала потянуть вниз для обновления страницы деталей',
+      'voteCommentFailedHint':
+          'Попробуйте сначала потянуть вниз для обновления страницы деталей',
       'unknownUser': 'Неизвестный пользователь',
       'atLeast3Characters': 'Минимум 3 символа',
-      'noJHenTaiHints': 'Пожалуйста, не упоминайте JHenTai, спасибо',
+      'noJHenTaiHints': 'Пожалуйста, не упоминайте название приложения в комментариях',
       'blockUser': 'Заблокировать пользователя',
 
       /// EHImage
@@ -242,7 +249,7 @@ class ru_RU {
       'paused': 'На паузе',
       'exceedImageLimits': "Превышен лимит изображений",
       'ehServerError': 'Произошла ошибка на сервере EH, попробуйте позже',
-      'unsupportedImagePageStyle': "JHenTai не поддерживает Multi-Page Viewer(MPV), пожалуйста, измените стиль на стандартный на e-hentai.org",
+      'unsupportedImagePageStyle': "hClient не поддерживает Multi-Page Viewer(MPV), пожалуйста, измените стиль на стандартный на e-hentai.org",
       // Оставляем JHenTai, MPV, e-hentai.org
       'toNext': 'К следующей',
       'toPrev': 'К предыдущей',
@@ -264,13 +271,13 @@ class ru_RU {
       'advanced': 'Расширенные',
       'cloud': 'Облако',
       'security': 'Безопасность',
-      'about': 'О приложении',
       'accountSetting': 'Настройка аккаунта',
       'styleSetting': 'Настройка стиля',
       'advancedSetting': 'Расширенные настройки',
       'refreshRate': 'Частота обновления',
       'refreshRateCurrent': 'Текущая',
-      'refreshRateHint': 'Применяется сразу. Может не сработать из-за ограничений системы.',
+      'refreshRateHint':
+          'Применяется сразу. Может не сработать из-за ограничений системы.',
       'refreshRateSecurityHint': 'Не меняйте без необходимости. При проблемах сбросьте данные приложения.',
       'securitySetting': 'Настройки безопасности',
       'ehSetting': 'Настройки сайта EH',
@@ -288,7 +295,7 @@ class ru_RU {
       'redirectAllGallery': 'Перенаправлять все галереи на EH',
       'imDonorHint': 'Если вы донор, вы можете включить это, чтобы получить доступ к галереям на сайте EX',
       'profileSetting': 'Настройка профиля',
-      'chooseProfileHint': 'Выберите профиль для использования в JHenTai',
+      'chooseProfileHint': 'Выберите профиль для использования в hClient',
       'siteSetting': 'Настройки сайта',
       'siteSettingHint': 'Редактировать настройки сайта на e-hentai',
       'showCookie': 'Показать Cookie',
@@ -331,7 +338,8 @@ class ru_RU {
       /// Layout
       'layoutMode': 'Режим макета',
       'layoutFollowOrientation': 'Макет по ориентации',
-      'layoutFollowOrientationHint': 'Использовать разные макеты в портретной и альбомной ориентации',
+      'layoutFollowOrientationHint':
+          'Использовать разные макеты в портретной и альбомной ориентации',
       'portraitLayout': 'Портретный макет',
       'landscapeLayout': 'Альбомный макет',
       'mobileLayoutV2Name': 'Мобильный',
@@ -343,14 +351,17 @@ class ru_RU {
       'tabletLayoutName': 'Планшетный (старый)',
       'tabletLayoutDesc': 'Поддержка прекращена',
       'desktopLayoutName': 'Десктопный',
-      'desktopLayoutDesc': 'Две колонки с левой панелью вкладок, поддержка клавиатуры',
+      'desktopLayoutDesc':
+          'Две колонки с левой панелью вкладок, поддержка клавиатуры',
 
       /// style setting page
       'enableTagZHTranslation': 'Переводить названия тегов на китайский',
       'version': 'Версия',
       'downloadTagTranslationHint': 'Загрузка данных..., загружено: ',
-      'zhTagSearchOrderOptimization': 'Правило сортировки автодополнения китайских тегов',
-      'zhTagSearchOrderOptimizationHint': 'Интеллектуальная сортировка по умолчанию, по частоте, если включено',
+      'zhTagSearchOrderOptimization':
+          'Правило сортировки автодополнения китайских тегов',
+      'zhTagSearchOrderOptimizationHint':
+          'Интеллектуальная сортировка по умолчанию, по частоте, если включено',
       'themeMode': 'Тема оформления',
       'dark': 'Темная',
       'light': 'Светлая',
@@ -366,8 +377,10 @@ class ru_RU {
       'waterfallFlowBig': 'Плитка (Большая)',
       'crossAxisCountInWaterFallFlow': 'Количество колонок в плитке',
       'pageListStyle': 'Стиль списка галерей (Страница)',
-      'crossAxisCountInGridDownloadPageForGroup': 'Кол-во колонок на стр. загрузок (Группа)',
-      'crossAxisCountInGridDownloadPageForGallery': 'Кол-во колонок на стр. загрузок (Галерея)',
+      'crossAxisCountInGridDownloadPageForGroup':
+          'Кол-во колонок на стр. загрузок (Группа)',
+      'crossAxisCountInGridDownloadPageForGallery':
+          'Кол-во колонок на стр. загрузок (Галерея)',
       'crossAxisCountInDetailPage': 'Кол-во колонок миниатюр на стр. деталей',
       'global': 'Глобально',
       'auto': 'Авто',
@@ -382,35 +395,43 @@ class ru_RU {
       'whenScrollUp': 'При прокрутке вверх',
       'whenScrollDown': 'При прокрутке вниз',
       'preloadGalleryCover': 'Предзагружать обложки галерей',
-      'preloadGalleryCoverHint': 'Предзагружать обложки галерей, еще не отображенных на странице',
+      'preloadGalleryCoverHint':
+          'Предзагружать обложки галерей, еще не отображенных на странице',
       'enableSwipeBackGesture': 'Включить жест "Назад" свайпом',
       'enableLeftMenuDrawerGesture': 'Включить жест открытия левого меню',
-      'enableQuickSearchDrawerGesture': 'Включить жест открытия быстрого поиска',
-      'drawerGestureEdgeWidth': 'Ширина края для жеста меню',
+      'enableQuickSearchDrawerGesture':
+          'Включить жест открытия быстрого поиска',
       'alwaysShowScroll2TopButton': 'Всегда показывать кнопку "Наверх"',
       'enableDefaultFavorite': 'Включить избранное по умолчанию',
       'enableDefaultFavoriteHint': 'Долгий тап для перевыбора',
       'enableDefaultTagSet': 'Включить набор тегов по умолчанию',
-      'enableDefaultTagSetHint': 'Добавлять в набор тегов по умолчанию напрямую',
+      'enableDefaultTagSetHint':
+          'Добавлять в набор тегов по умолчанию напрямую',
       'disableDefaultTagSetHint': 'Выбирать вручную',
       'launchInFullScreen': 'Запускать в полноэкранном режиме',
       'launchInFullScreenHint': 'Переключение вручную по F11',
       'disableDefaultFavoriteHint': 'Выбирать вручную',
       'searchBehaviour': 'Поведение поиска',
       'inheritAll': 'Наследовать все',
-      'inheritAllHint': 'Использовать последние параметры для следующего поиска',
+      'inheritAllHint':
+          'Использовать последние параметры для следующего поиска',
       'inheritPartially': 'Наследовать частично',
-      'inheritPartiallyHint': 'Использовать последние параметры (кроме языка и категории)',
+      'inheritPartiallyHint':
+          'Использовать последние параметры (кроме языка и категории)',
       'none': 'Нет',
       'noneHint': 'Использовать параметры по умолчанию для следующего поиска',
       'showAllGalleryTitles': 'Показывать все названия галерей',
-      'showAllGalleryTitlesHint': 'Показывать оригинальное и японское названия, если доступны',
-      'showGalleryTagVoteStatus': 'Показывать статус голосования за теги галереи',
-      'showGalleryTagVoteStatusHint': 'Включая уверенность, скептицизм и неверность',
+      'showAllGalleryTitlesHint':
+          'Показывать оригинальное и японское названия, если доступны',
+      'showGalleryTagVoteStatus':
+          'Показывать статус голосования за теги галереи',
+      'showGalleryTagVoteStatusHint':
+          'Включая уверенность, скептицизм и неверность',
       'showComments': 'Показывать комментарии',
       'showCommentsHint': 'Если отключено, комментарии скрыты на странице галереи, но их можно открыть через «Все комментарии»',
       'showAllComments': 'Показывать все комментарии',
-      'showAllCommentsHint': 'По умолчанию показываются только 45 лучших и 5 последних',
+      'showAllCommentsHint':
+          'По умолчанию показываются только 45 лучших и 5 последних',
       'addTag': 'Добавить тег',
       'addTagHint': 'Введите новые теги через запятую',
 
@@ -421,7 +442,8 @@ class ru_RU {
       'custom': 'Пользовательский',
 
       /// performance setting page
-      'maxGalleryNum4Animation': 'Макс. кол-во галерей для анимации списка на стр. загрузок',
+      'maxGalleryNum4Animation':
+          'Макс. кол-во галерей для анимации списка на стр. загрузок',
       'maxGalleryNum4AnimationHint': 'Отключить анимацию для групп с большим кол-вом галерей (для стиля списка)',
 
       /// mouse wheel setting page
@@ -434,7 +456,8 @@ class ru_RU {
       'hostMapping': 'Сопоставление хостов',
       'hostMappingHint': 'Используется для domain fronting',
       'proxyAddress': 'Адрес прокси',
-      'proxyAddressHint': 'Если вы используете прокси-сервер, настройте его правильно',
+      'proxyAddressHint':
+          'Если вы используете прокси-сервер, настройте его правильно',
       'saveSuccess': 'Успешно сохранено',
       'saveFailed': 'Не удалось сохранить',
       'updateSuccess': 'Успешно обновлено',
@@ -443,7 +466,8 @@ class ru_RU {
       'pageCacheMaxAge': 'Время жизни кэша страниц',
       'pageCacheMaxAgeHint': 'Вы можете обновить кэш, обновив страницу',
       'cacheImageExpireDuration': 'Время жизни кэша изображений',
-      'cacheImageExpireDurationHint': 'Автоматически удалять кэш изображений после запуска приложения',
+      'cacheImageExpireDurationHint':
+          'Автоматически удалять кэш изображений после запуска приложения',
       'oneMinute': '1 минута',
       'tenMinute': '10 минут',
       'oneHour': '1 час',
@@ -455,16 +479,11 @@ class ru_RU {
       'clearLogs': 'Очистить логи',
       'clearImagesCache': 'Очистить кэш изображений',
       'longPress2Clear': 'Долгий тап для очистки',
-      'checkUpdateAfterLaunchingApp': 'Проверять обновления при запуске',
       'checkClipboard': 'Проверять URL галереи в буфере обмена',
       'clearPageCache': 'Очистить кэш страниц',
       'clearSuccess': 'Успешно очищено',
-      'superResolution': 'Супер-разрешение изображений',
-      'stopSuperResolution': 'Остановить супер-разрешение',
-      'deleteSuperResolvedImage': 'Удалить обработанное изображение',
-      'superResolveOriginalImageHint': 'Обработка оригинального изображения требует больше времени, места и ресурсов. Продолжить?',
       'verityAppLinks4Android12': 'Проверка ссылок приложений (Android 12+)',
-      'verityAppLinks4Android12Hint': 'Для Android 12+ нужно вручную добавить ссылки в проверенные, чтобы открывать JHenTai из сторонних приложений',
+      'verityAppLinks4Android12Hint': 'Для Android 12+ нужно вручную добавить ссылки в проверенные, чтобы открывать hClient из сторонних приложений',
       // Оставляем JHenTai
       'noImageMode': 'Режим без изображений',
       'exportData': 'Экспорт данных',
@@ -474,7 +493,8 @@ class ru_RU {
       'importDataHint': 'Приложение автоматически закроется после импорта для применения конфигурации',
 
       /// host mapping page
-      'hostDataSource': 'По умолчанию менять не нужно.\nИсточник данных: https://dns.google/',
+      'hostDataSource':
+          'По умолчанию менять не нужно.\nИсточник данных: https://dns.google/',
       // URL не переводим
 
       /// proxy page
@@ -499,7 +519,8 @@ class ru_RU {
       /// read setting page
       'enableImmersiveMode': 'Включить иммерсивный режим',
       'keepScreenAwakeWhenReading': 'Не выключать экран при чтении',
-      'enableCustomReadBrightness': 'Включить пользовательскую яркость при чтении',
+      'enableCustomReadBrightness':
+          'Включить пользовательскую яркость при чтении',
       'spaceBetweenImages': 'Пространство между изображениями',
       'enableImmersiveHint': 'Скрыть системную панель',
       'enableImmersiveHint4Windows': 'Скрыть заголовок окна',
@@ -507,7 +528,8 @@ class ru_RU {
       'landscape': 'Альбомная',
       'portrait': 'Портретная',
       'readDirection': 'Направление чтения',
-      'enableOrientationSpecificReadDirection': 'Направление чтения по ориентации',
+      'enableOrientationSpecificReadDirection':
+          'Направление чтения по ориентации',
       'enableOrientationSpecificReadDirectionHint': 'Установить разное направление чтения для портретной и альбомной ориентации',
       'autoDetectWebtoon': 'Автоопределение вебтунов',
       'autoDetectWebtoonHint': 'Автоматически использовать режим непрерывного чтения сверху вниз для галерей с тегом webtoon',
@@ -540,8 +562,6 @@ class ru_RU {
       'tapZoneBottomRowRatio': 'Высота нижнего ряда',
       'tapZonePreview': 'Предпросмотр',
       'tapZoneGuideHint': 'Нажмите в любом месте, чтобы закрыть. Зоны настраиваются в Настройки → Чтение.',
-      'useThirdPartyViewer': 'Использовать сторонний просмотрщик',
-      'thirdPartyViewerPath': 'Путь к стороннему просмотрщику (исп. файл)',
       'showThumbnails': 'Показывать миниатюры',
       'showScrollBar': 'Показывать полосу прокрутки',
       'showStatusInfo': 'Показывать статус внизу',
@@ -558,7 +578,8 @@ class ru_RU {
       'right2leftDoubleColumn': 'Справа налево (Две колонки)',
       'left2rightList': 'Слева направо (Непрерывно)',
       'right2leftList': 'Справа налево (Непрерывно)',
-      'enablePageTurnByVolumeKeys': 'Использовать клавиши громкости для перелистывания',
+      'enablePageTurnByVolumeKeys':
+          'Использовать клавиши громкости для перелистывания',
       'enablePageTurnByVolumeKeysHint': 'В iOS, если громкость равна 0 или 100%, при входе в режим чтения она будет автоматически изменена для поддержки перелистывания и восстановлена при выходе',
       'enablePageTurnAnime': 'Включить анимацию перелистывания',
       'enableDoubleTapToScaleUp': 'Включить двойной тап для увеличения',
@@ -576,12 +597,14 @@ class ru_RU {
       'preloadDistanceInLocalMode': 'Дистанция предзагрузки (Локально)',
       'ScreenHeight': 'Экран',
       'preloadPageCount': 'Кол-во предзагружаемых страниц (Онлайн)',
-      'preloadPageCountInLocalMode': 'Кол-во предзагружаемых страниц (Локально)',
+      'preloadPageCountInLocalMode':
+          'Кол-во предзагружаемых страниц (Локально)',
       'continuousScroll': 'Непрерывная прокрутка',
       'continuousScrollHint': 'Склеивать несколько изображений',
       'doubleColumn': 'Две колонки',
       'displayFirstPageAlone': 'Отображать первую страницу отдельно',
-      'displayFirstPageAloneGlobally': 'Отображать первую страницу отдельно (Глобально)',
+      'displayFirstPageAloneGlobally':
+          'Отображать первую страницу отдельно (Глобально)',
       'portraitDisplayFirstPageAlone': 'Первая страница отдельно (портрет)',
       'landscapeDisplayFirstPageAlone': 'Первая страница отдельно (ландшафт)',
       'toggleFullScreen': 'Переключить полноэкранный режим',
@@ -594,13 +617,15 @@ class ru_RU {
       'resetSuccess': 'Сброшено до значений по умолчанию',
       'keyConflict': 'Конфликт клавиш',
       'fixedKeyHint': 'Фиксированная клавиша, не настраивается',
-      'pressAnyKeyOrMouseSideButton': 'Нажмите любую клавишу или боковую кнопку мыши...',
+      'pressAnyKeyOrMouseSideButton':
+          'Нажмите любую клавишу или боковую кнопку мыши...',
       'mouseButton4Name': 'Мышь вперёд',
       'mouseButton5Name': 'Мышь назад',
       'toLeft': 'Влево',
       'toRight': 'Вправо',
       'enableAutoScaleUp': 'Включить авто-масштабирование длинных изображений',
-      'enableAutoScaleUpHints': 'Сделать ширину изображения равной ширине экрана',
+      'enableAutoScaleUpHints':
+          'Сделать ширину изображения равной ширине экрана',
 
       /// preference setting page
       'showR18GImageDirectly': 'Показывать R18G изображения сразу',
@@ -608,16 +633,13 @@ class ru_RU {
       'defaultDownloadTab': 'Вкладка загрузок по умолчанию',
       'showUtcTime': 'Показывать UTC время для галерей',
       'showDawnInfo': 'Показывать событие "Новый рассвет"',
-      'showEncounterMonster': 'Показывать событие "Встреча с монстром" (HentaiVerse)',
+      'showEncounterMonster':
+          'Показывать событие "Встреча с монстром" (HentaiVerse)',
 
       /// log page
       'logList': 'Список логов',
 
-      /// super resolution setting page
-      'downloadSuperResolutionModelHint': 'Скачать модель с Github',
-      'modelDirectoryPath': 'Путь к каталогу моделей',
       'upSamplingScale': 'Масштаб увеличения',
-      'modelType': 'Выбрать модель',
       'x4plusHint': 'Занимает больше места, но обычно быстрее',
       'x4plusAnimeHint': 'Занимает меньше места, но обычно медленнее',
       'enable4OnlineReading': 'Обрабатывать автоматически при чтении онлайн',
@@ -641,10 +663,11 @@ class ru_RU {
       'completed': 'Завершено',
       'needReUnlock': 'Нужна повторная разблокировка',
       'reUnlock': 'Разблокировать заново',
-      'reUnlockHint': 'Внимание! Повторная разблокировка требует повторной покупки архива.',
+      'reUnlockHint':
+          'Внимание! Повторная разблокировка требует повторной покупки архива.',
       'downloadHelpInfo': 'Если вы не можете скачать и видите ошибки типа "table doesn\'t exist" в логах, удалите и переустановите приложение.',
-      'localGalleryHelpInfo': 'Загрузка галерей, скачанных не через JHenTai. Добавьте путь в Настройки загрузки -> Доп. путь сканирования, затем обновите.',
-      'localGalleryHelpInfo4iOSAndMacOS': 'Загрузка галерей, скачанных не через JHenTai. Поместите галереи в путь загрузки по умолчанию, затем обновите.',
+      'localGalleryHelpInfo': 'Загрузка галерей, скачанных не через hClient. Добавьте путь в Настройки загрузки -> Доп. путь сканирования, затем обновите.',
+      'localGalleryHelpInfo4iOSAndMacOS': 'Загрузка галерей, скачанных не через hClient. Поместите галереи в путь загрузки по умолчанию, затем обновите.',
       'deleteLocalGalleryHint': 'Удалить ваши локальные файлы',
       'priority': 'Приоритет',
       'highest': 'Высший',
@@ -671,7 +694,8 @@ class ru_RU {
       'multiReDownloadHint': 'Вы перекачаете все выбранные галереи.',
       'multiChangeGroupHint': 'Вы измените группу для всех выбранных галерей.',
       'multiDeleteHint': 'Вы удалите все выбранные галереи.',
-      'blankImageHint': 'Downloading the image returned an empty result, trying to re-parse.',
+      'blankImageHint':
+          'Downloading the image returned an empty result, trying to re-parse.',
       'peakHoursHint': 'Загрузка оригинальных файлов в часы пик требует GP, у вас недостаточно. Загрузка приостановлена.',
       // GP - термин EH
       'oldGalleryHint': 'Загрузка оригинальных файлов этой галереи требует GP, у вас недостаточно.',
@@ -719,7 +743,8 @@ class ru_RU {
       'pageAtLeast': 'Страниц минимум',
       'pageAtMost': 'Страниц максимум',
       'pagesBetween': 'Страниц между',
-      'pageRangeSelectHint': 'мин <= 1000, макс >= 10\nмин/макс <= 0.8, макс-мин >= 20',
+      'pageRangeSelectHint':
+          'мин <= 1000, макс >= 10\nмин/макс <= 0.8, макс-мин >= 20',
       'to': 'до',
       'minimumRating': 'Минимальный рейтинг',
       'disableFilterForLanguage': 'Отключить фильтр по языку',
@@ -755,49 +780,65 @@ class ru_RU {
       'hundredsOfCountTemplate': 'Сотни результатов',
       'thousandsOfCountTemplate': 'Тысячи результатов',
 
-      /// about page
-      'author': 'Автор',
-      'Q&A': 'Вопросы и ответы',
-      'telegramHint': 'Вы можете сначала задать вопросы на Github',
-
       /// download setting page
       'downloadPath': 'Путь загрузки',
-      'changeDownloadPathHint':
-          'Долгий тап для изменения (не используйте SD-карту или системные пути). Скачанные галереи будут скопированы автоматически, старые файлы сохранены. При ошибках попробуйте сбросить.',
+      'changeDownloadPathHint': 'Удерживайте, чтобы выбрать папку для новых загрузок. Существующее содержимое можно перенести отдельно.',
+      'moveExistingDownloads': 'Перенести загрузки в текущую папку',
+      'moveExistingDownloadsHint':
+          'Перенести галереи и архивы из других папок в текущую папку загрузок',
+      'movingDownloads': 'Перенос загрузок',
+      'moveDownloadsResult': 'Перенесено: @count; ошибок: @failed',
       'resetDownloadPath': 'Сбросить путь загрузки',
       'extraGalleryScanPath': 'Доп. путь сканирования галерей',
-      'extraGalleryScanPathHint': 'Для сканирования и загрузки локальных галерей',
+      'extraGalleryScanPathHint':
+          'Для сканирования и загрузки локальных галерей',
       'singleImageSavePath': 'Путь сохранения отдельных изображений',
       'downloadOriginalImage': 'Оригинальное изображение',
-      'downloadOriginalImageByDefault': 'Выбирать оригинальное изображение по умолчанию',
+      'downloadOriginalImageByDefault':
+          'Выбирать оригинальное изображение по умолчанию',
       'originalImage': 'Оригинал',
       'resampleImage': 'Уменьшенное',
       'defaultGalleryGroup': 'Группа галерей по умолчанию',
-      'prioritizeRecentGalleryGroups': 'Недавние группы галерей в начале списка',
+      'prioritizeRecentGalleryGroups':
+          'Недавние группы галерей в начале списка',
       'defaultArchiveGroup': 'Группа архивов по умолчанию',
       'never': 'Никогда',
       'manual': 'Вручную',
       'always': 'Всегда',
       'longPress2Reset': 'Долгий тап для сброса',
-      'needPermissionToChangeDownloadPath': 'Нужно разрешение для изменения пути загрузки',
+      'needPermissionToChangeDownloadPath':
+          'Нужно разрешение для изменения пути загрузки',
       'invalidPath': 'Недопустимый путь. Избегайте SD-карт, системных путей или корневого каталога.',
       'downloadTaskConcurrency': 'Параллельные загрузки',
+      'closeAppForRestore': 'Закрыть приложение',
+      'backupSettings': 'Настройки приложения (включая Archive Bot)',
+      'backupLogin': 'Состояние входа',
+      'backupArchives': 'Задачи архивов и группы',
+      'localBackupHint': 'Локальная копия может содержать данные входа и ключи API. Храните её безопасно. Файлы остаются в папке загрузок; при смене устройства скопируйте их отдельно.',
+      'legacyBackupHint': 'Старая копия содержит только прогресс чтения, поиск, правила и историю. Настроек, данных входа и задач архивов в ней нет.',
+      'backupRestartHint': 'Импорт завершён. Закройте и снова откройте приложение, чтобы загрузить настройки, данные входа и задачи архивов.',
       'needRestart': 'Требуется перезапуск',
       'speedLimit': 'Ограничение скорости',
       'speedLimitHint': 'Не качайте слишком быстро',
       'per': 'за',
       'images': 'изображений',
       'downloadTimeout': 'Тайм-аут загрузки',
-      'downloadAllGalleriesOfSamePriority': 'Загружать все галереи одного приоритета',
+      'downloadAllGalleriesOfSamePriority':
+          'Загружать все галереи одного приоритета',
       'downloadAllGalleriesOfSamePriorityHint': 'По умолчанию загружать только 1 галерею одновременно в 1 группе с высшим приоритетом',
       'alwaysUseDefaultGroup': 'Всегда использовать группу по умолчанию',
-      'enableStoreMetadataForRestore': 'Включить сохранение метаданных для восстановления',
-      'enableStoreMetadataForRestoreHint': 'Если отключено, вы не сможете восстановить задачи загрузки',
+      'enableStoreMetadataForRestore':
+          'Включить сохранение метаданных для восстановления',
+      'enableStoreMetadataForRestoreHint':
+          'Если отключено, вы не сможете восстановить задачи загрузки',
       'archiveDownloadIsolateCount': 'Кол-во потоков загрузки архивов',
       'archiveDownloadIsolateCountHint': 'Сумма потоков для всех задач должна быть < 10, иначе загрузка не удастся',
-      'manageArchiveDownloadConcurrency': 'Управлять параллелизмом загрузки архивов',
-      'manageArchiveDownloadConcurrencyHint': 'Архив будет ждать, пока не освободятся потоки для загрузки',
-      'deleteArchiveFileAfterDownload': 'Удалять ZIP-файл архива после загрузки',
+      'manageArchiveDownloadConcurrency':
+          'Управлять параллелизмом загрузки архивов',
+      'manageArchiveDownloadConcurrencyHint':
+          'Архив будет ждать, пока не освободятся потоки для загрузки',
+      'deleteArchiveFileAfterDownload':
+          'Удалять ZIP-файл архива после загрузки',
       'restoreDownloadTasks': 'Восстановить задачи загрузки',
       'restoreDownloadTasksHint': 'Восстановить задачи загрузки по метаданным',
       'restoreDownloadTasksSuccess': 'Задачи загрузки успешно восстановлены',
@@ -805,7 +846,8 @@ class ru_RU {
       'restoredGalleryCount': 'Восстановлено галерей',
       'restoredArchiveCount': 'Восстановлено архивов',
       'restoreTasksAutomatically': 'Восстанавливать задачи автоматически',
-      'restoreTasksAutomaticallyHint': 'Восстанавливать задачи автоматически при запуске приложения',
+      'restoreTasksAutomaticallyHint':
+          'Восстанавливать задачи автоматически при запуске приложения',
       'brokenDownloadPathHint': 'Похоже, ваш путь загрузки поврежден, функция загрузки может не работать',
       'brokenExtraScanPathHint': 'Похоже, ваш путь к локальным галереям поврежден, локальные галереи могут не распознаваться',
       'useJH2UpdateGallery': 'Use JH server to accelerate gallery updates',
@@ -824,8 +866,10 @@ class ru_RU {
       'checkInFailed': 'Check-in failed',
       'checkInSuccess': 'Check-in success',
       'checkInSuccessHint': 'Got GP: %s, current total GP: %s.',
-      'pauseDownloadByInvalidArchiveBotKey': 'Archive bot settings is invalid, download paused',
-      'archiveBotNotConfigured': 'Архивный бот не настроен, перейти к настройкам?',
+      'pauseDownloadByInvalidArchiveBotKey':
+          'Archive bot settings is invalid, download paused',
+      'archiveBotNotConfigured':
+          'Архивный бот не настроен, перейти к настройкам?',
       'getBotCostFailed': 'Не удалось получить стоимость бота',
       'archiveBotShort': 'Bot',
       'chooseArchiveParseSource': 'Change Parse Source',
@@ -841,8 +885,8 @@ class ru_RU {
       'parseFailed': 'Parse failed',
       'checkedIn': 'Already checked in today',
       'serverError': 'Archive bot internal error',
-      'useProxyServer': 'Use JHenTai Proxy Server',
-      'useProxyServerHint': 'Route requests through JHenTai server',
+      'useProxyServer': 'Use hClient Proxy Server',
+      'useProxyServerHint': 'Route requests through hClient server',
 
       /// password setting dialog
       'setPasswordHint': 'Пожалуйста, введите ваш пароль',
@@ -856,7 +900,8 @@ class ru_RU {
       'upload2cloud': 'Загрузить в облако',
       'upload2cloudHint': 'Загрузить вашу текущую локальную конфигурацию',
       'tap2upload': 'Нажмите для загрузки',
-      'copyIdentificationCodeSuccess': 'Загружено успешно. Идентификационный код скопирован',
+      'copyIdentificationCodeSuccess':
+          'Загружено успешно. Идентификационный код скопирован',
       'copyShareCode': 'Скопировать код для обмена',
       'import': 'Импорт',
       'save2Local': 'Сохранить локально',
@@ -871,10 +916,13 @@ class ru_RU {
       'removeBlockRuleFailed': 'Не удалось удалить правило блокировки',
       'inputNumberHint': 'Пожалуйста, введите корректное число',
       'inputRegexHint': 'Пожалуйста, введите корректное регулярное выражение',
-      'useBuiltInBlockedUsers': 'Включить встроенный список заблокированных пользователей',
-      'useBuiltInBlockedUsersHint': 'Фильтровать комментарии от пользователей из списка блокировки',
+      'useBuiltInBlockedUsers':
+          'Включить встроенный список заблокированных пользователей',
+      'useBuiltInBlockedUsersHint':
+          'Фильтровать комментарии от пользователей из списка блокировки',
       'blockingRules': 'Правила блокировки',
-      'blockingRulesHint': 'Дополнительные правила блокировки для галерей и комментариев',
+      'blockingRulesHint':
+          'Дополнительные правила блокировки для галерей и комментариев',
       'blockingTarget': 'Цель блокировки',
       'blockingAttribute': 'Атрибут блокировки',
       'blockingPattern': 'Шаблон блокировки',
@@ -888,7 +936,8 @@ class ru_RU {
       'content': 'Содержимое',
       'incompleteInformation': 'Неполная информация',
       'noBlockingRuleHint': 'Добавьте хотя бы 1 правило',
-      'notSameBlockingRuleTargetHint': 'Все подправила должны иметь одну и ту же цель блокировки',
+      'notSameBlockingRuleTargetHint':
+          'Все подправила должны иметь одну и ту же цель блокировки',
       'blockingRuleHelp': '''
 Цель блокировки: Фильтровать галереи в списке или комментарии на странице деталей. Все подправила в одном правиле должны иметь одну цель.
 Атрибут блокировки: Указывает атрибут цели, по которому пишется правило.
@@ -926,8 +975,10 @@ class ru_RU {
       'tagActionFollow': 'Отслеживать тег',
       'tagActionHide': 'Скрыть тег',
       'tagActionTagSets': 'Управление наборами тегов',
-      'tagActionVoteUpTooltip': 'Проголосовать, что этот тег подходит для этой галереи',
-      'tagActionVoteDownTooltip': 'Проголосовать, что этот тег не подходит для этой галереи',
+      'tagActionVoteUpTooltip':
+          'Проголосовать, что этот тег подходит для этой галереи',
+      'tagActionVoteDownTooltip':
+          'Проголосовать, что этот тег не подходит для этой галереи',
       'tagActionFollowHint': 'Добавить этот тег в отслеживаемый набор',
       'tagActionHideHint': 'Добавить этот тег в скрытый набор',
       'tagActionTagSetsHint': 'Открыть управление наборами тегов',
@@ -950,6 +1001,202 @@ class ru_RU {
       'permissionPermanentlyDeniedHint': 'Для сохранения в галерею требуется разрешение. Предоставьте приложению полный доступ в настройках системы',
       'goToSetting': 'Перейти в настройки',
       'other': 'Другое',
+      'webdavTitle': 'WebDAV',
+      'webdavAddress': 'Адрес WebDAV',
+      'webdavUsername': 'Имя пользователя',
+      'webdavPassword': 'Пароль',
+      'webdavRootPath': 'Корневой путь',
+      'webdavSave': 'Сохранить подключение',
+      'webdavBackup': 'Создать копию',
+      'webdavRestore': 'Восстановить',
+      'webdavRefresh': 'Обновить список',
+      'webdavSaved': 'Подключение сохранено',
+      'webdavBackupComplete': 'Копия создана',
+      'webdavRestoreComplete': 'Восстановление завершено',
+      'webdavSnapshots': 'Резервные копии',
+      'webdavNoSnapshots': 'Копии не найдены',
+      'webdavSnapshot': 'Копия',
+      'webdavDevice': 'Устройство',
+      'webdavAuthError': 'Ошибка авторизации WebDAV. Проверьте имя и пароль.',
+      'webdavNetworkError': 'Не удалось подключиться к WebDAV.',
+      'webdavMissingError': 'Файл копии не найден.',
+      'webdavTransferError': 'Ошибка передачи WebDAV',
+      'backupBotCredential': 'Включить ключ Archive Bot',
+      'backupProxyCredential': 'Включить пароль прокси',
+      'backupGroups': 'Группы (имена и порядок)',
+      'backupRestartNotice': 'Восстановление завершено. Закройте и снова откройте приложение для применения настроек.',
+      'cloudRefresh': 'Обновить облако',
+      'cloudSearch': 'Поиск по названию, ID, загрузившему или тегам',
+      'cloudAllTypes': 'Все',
+      'cloudOriginal': 'Оригинал',
+      'cloudResampled': 'Изменённый размер',
+      'cloudUnspecified': 'Не указано',
+      'cloudEmpty': 'В облаке пока нет галерей',
+      'cloudMore': 'Ещё',
+      'cloudVersions': 'версий',
+      'cloudPages': 'страниц',
+      'cloudLocalAvailable': 'Есть на устройстве',
+      'cloudRemoteAvailable': 'Доступно в облаке',
+      'cloudOpen': 'Открыть',
+      'cloudRestore': 'Скачать на устройство',
+      'cloudRestoreFailed': 'Не удалось восстановить. Повторите попытку.',
+      'cloudConfigureWebDav': 'Настройте WebDAV для просмотра облачных галерей',
+      'cloudUpload': 'Загрузить в облако',
+      'cloudUploadAndClean': 'Удалить локальную копию после загрузки',
+      'cloudNoCompleted': 'No completed downloads selected',
+      'transferUpload': 'Отправка',
+      'transferWaiting': 'Ожидание',
+      'cloudQueued': 'Добавлено в очередь синхронизации',
+      'cloudSyncFailed': 'Ошибка синхронизации',
+      'cloudSyncJobs': 'Задачи передачи',
+      'cloudWaitingInput': 'Ожидание загрузки',
+      'cloudPaused': 'Приостановлено',
+      'cloudFailed': 'Ошибка',
+      'cloudPublishing': 'Завершение загрузки',
+      'cloudUploading': 'Загрузка',
+      'cloudPause': 'Пауза',
+      'cloudRetry': 'Повторить',
+      'cloudCleanLocal': 'Удалить локальную копию',
+      'cloudCleanConfirm':
+          'Оставить копию в облаке и удалить файлы с устройства?',
+      'cloudReleasing': 'Локальные файлы удаляются',
+      'cloudReleased': 'Локальные файлы удалены',
+      'cloudActions': 'Действия',
+      'cloudHistory': 'История редакций',
+      'cloudNoHistory': 'Нет прежних редакций',
+      'cloudEditRevision': 'Изменить метаданные',
+      'cloudTitle': 'Название',
+      'cloudParentGid': 'ID родительской галереи',
+      'cloudLookupSource': 'Найти связь с источником',
+      'cloudSourceLookupFailed': 'Не удалось синхронизировать метаданные сайта',
+
+      'close': 'Закрыть',
+      'clear': 'Очистить',
+
+      /// WebDAV connection and cloud library
+      'cloudCachedLibrary': 'Показаны ранее загруженные галереи',
+      'cloudCancelUpload': 'Отменить загрузку',
+      'cloudChooseUploads': 'Выберите галереи для загрузки',
+      'cloudClearFilters': 'Сбросить фильтры',
+      'cloudDownloading': 'Скачивание…',
+      'cloudEmptyHint': 'Загрузите локальные галереи, чтобы просматривать и скачивать их на других устройствах.',
+      'cloudFailedCount': 'Требуют внимания: @count',
+      'cloudFailureDetailsUnavailable':
+          'Подробности ошибки не сохранены. Попробуйте загрузить снова.',
+      'cloudFilter': 'Фильтр галерей',
+      'cloudKeepLocal': 'Сохранить локальную копию',
+      'cloudLibrary': 'Облачная библиотека',
+      'cloudLoadFailed': 'Не удалось загрузить облачные галереи',
+      'cloudLoadingHint': 'Чтение галерей из этого подключения. Подождите.',
+      'cloudLoadingLibrary': 'Загрузка облачных галерей',
+      'cloudNoMatches': 'Подходящих галерей нет',
+      'cloudNoMatchesHint': 'Попробуйте другой запрос или сбросьте фильтры.',
+      'cloudNoTransfers': 'Нет задач передачи',
+      'cloudNoTransfersHint': 'Загрузите локальную галерею или откройте облачную, чтобы увидеть ход передачи.',
+      'cloudQueuePartialFailure':
+          'Добавлено: @count. Не удалось добавить: @failed',
+      'cloudQueuedFeedback': 'Добавлено задач загрузки: @count',
+      'cloudQueuedState': 'Ожидание загрузки',
+      'cloudResume': 'Продолжить загрузку',
+      'cloudSearchLocal': 'Поиск локальных галерей по названию или ID',
+      'cloudStartTitle': 'Подключите облачную библиотеку',
+      'cloudTaskCount': 'Задач передачи: @count',
+      'cloudTaskListFailed':
+          'Не удалось загрузить задачи. Нажмите, чтобы повторить.',
+      'cloudUploadAndCleanConfirm': 'После загрузки выбранные локальные копии будут удалены. Облачные галереи сохранятся, и их можно будет скачать в любое время.',
+      'cloudUploadAndCleanHint': 'Удалить локальные копии после загрузки. Облачные галереи сохранятся.',
+      'cloudUploadSelected': 'Загрузить выбранные: @count',
+      'cloudViewTransfers': 'Посмотреть задачи загрузки',
+      'webDavErrorAuthentication': 'Неверное имя пользователя или пароль. Проверьте настройки подключения.',
+      'webDavErrorCodec': 'Не удалось обработать файлы галереи. Проверьте локальные файлы и повторите попытку.',
+      'webDavErrorConflict': 'Облачные данные или подключение изменились. Обновите и повторите попытку.',
+      'webDavErrorInvalidData': 'Данные недействительны или неполны. Проверьте файлы и повторите попытку.',
+      'webDavErrorInvalidResponse':
+          'Сервер вернул некорректный ответ. Проверьте адрес WebDAV.',
+      'webDavErrorLocalIo': 'Не удалось прочитать или записать локальные файлы. Проверьте свободное место и разрешения.',
+      'webDavErrorMissing': 'Нужный облачный файл или папка отсутствует. Обновите и повторите попытку.',
+      'webDavErrorNetwork': 'Не удалось подключиться к серверу. Проверьте сеть и адрес WebDAV и повторите попытку.',
+      'webDavErrorPermission': 'Сервер отказал в доступе. Проверьте учётную запись и права на папку.',
+      'webDavErrorServer':
+          'Сервер не смог обработать запрос. Повторите попытку позже.',
+      'webDavErrorUnknown': 'Операция не завершена. Повторите попытку.',
+      'webdavAnonymous': 'Имя пользователя не задано',
+      'webdavBackupWorking': 'Создание резервной копии…',
+      'webdavBackupsLoadError': 'Не удалось загрузить резервные копии настроек',
+      'webdavConfigBackup': 'Резервные копии настроек',
+      'webdavConfigBackupHint': 'Сохраняйте настройки, историю и другие данные приложения. Файлы галерей загружайте из библиотеки.',
+      'webdavConfigureConnection': 'Настроить подключение',
+      'webdavConnection': 'Текущее подключение',
+      'webdavConnectionFolderMissing': 'Папка приложения ещё не существует. Она будет создана при первой загрузке. Вы можете сохранить подключение.',
+      'webdavConnectionHint': 'Это подключение используется для синхронизации галерей и резервных копий настроек.',
+      'webdavConnectionReady':
+          'Подключено. Папка приложения доступна для чтения.',
+      'webdavConnectionRequired': 'Настройте подключение, чтобы создавать или восстанавливать резервные копии.',
+      'webdavCreateBackup': 'Создать копию настроек',
+      'webdavDraftHint': 'Проверка использует данные этой формы. Для синхронизации и резервного копирования используется сохранённое подключение.',
+      'webdavEditConnection': 'Изменить подключение',
+      'webdavHidePassword': 'Скрыть пароль',
+      'webdavInvalidAddress': 'Введите корректный адрес HTTP или HTTPS',
+      'webdavInvalidRootPath': 'Имена папок не могут быть . или ..',
+      'webdavNoBackupsHint': 'Создайте резервную копию, чтобы восстановить данные приложения позже.',
+      'webdavNotConfigured': 'WebDAV не настроен',
+      'webdavRestoreWorking': 'Восстановление резервной копии…',
+      'webdavRetry': 'Повторить',
+      'webdavRootPathHint': 'Необязательно, относительно адреса сервера',
+      'webdavSaving': 'Сохранение…',
+      'webdavServerRoot': 'Корневая папка сервера',
+      'webdavShowPassword': 'Показать пароль',
+      'webdavSyncResumeError': 'Подключение сохранено, но возобновить задачи синхронизации не удалось.',
+      'webdavTestConnection': 'Проверить подключение',
+      'webdavTesting': 'Проверка…',
+      'cloudCollections': 'Группы',
+      'cloudCategories': 'Категории сайта',
+      'webdavAutoGallerySync': 'Автосинхронизация готовых галерей',
+      'webdavAutoGallerySyncHint': 'Включает готовые галереи, новые загрузки и изменения метаданных. После синхронизации галереи переходят в облачную библиотеку, а изображения остаются для чтения офлайн.',
+      'webdavExistingReleaseCount':
+          'Задачи с удалением локальных изображений: @count',
+      'webdavExistingReleaseHint':
+          'Эти задачи сохраняют ранее выбранное удаление.',
+      'cloudSyncAndKeepImages':
+          'Перенести в облачную библиотеку, сохранив локальные изображения',
+      'cloudSyncedOne': '«@title» синхронизирована с облаком',
+      'cloudSyncedCount': 'Синхронизировано задач: @count',
+      'cloudTags': 'Теги',
+      'cloudSyncWebsiteMetadata': 'Синхронизировать метаданные сайта',
+      'cloudSelect': 'Выбрать галерею',
+      'cloudSelectedCount': 'Выбрано: @count',
+      'cloudMetadataBatchFailed':
+          'Не удалось синхронизировать метаданные @count галерей',
+      'cloudWebDavSettings': 'WebDAV settings',
+      'cloudEditCollections': 'Edit collections',
+      'cloudNewCollection': 'New collection',
+      'cloudCancelRestore': 'Cancel restore',
+      'cloudStatistics': 'Library statistics',
+      'cloudStatsOverview': 'Overview',
+      'cloudStatsDetails': 'Gallery details',
+      'cloudStatsIndexed': 'Indexed gallery images on this connection',
+      'cloudStatsFamilies': 'Works',
+      'cloudStatsGids': 'GID versions',
+      'cloudStatsMultiVersion': 'Works with multiple GIDs',
+      'cloudStatsContentCopies': 'Content copies',
+      'cloudStatsPages': 'Total pages',
+      'cloudStatsRawBytes': 'Original size',
+      'cloudStatsStoredBytes': 'Stored size',
+      'cloudStatsCompression': 'Compression savings',
+      'cloudStatsUniqueObjects': 'Unique image objects',
+      'cloudStatsUniqueBytes': 'Deduplicated image size',
+      'cloudStatsReuseSavings': 'Repeated reference savings',
+      'cloudStatsIndexedAt': 'Index refreshed at @time',
+      'cloudStatsPartial': 'Index is incomplete',
+      'cloudStatsRefreshing': 'Refreshing index',
+      'cloudStatsCached': 'Refresh failed. Showing the existing index.',
+      'cloudMoreActions': 'More actions',
+      'cloudAddCollection': 'Add collection',
+      'singlePageTransfer': 'Redownload page',
+      'webdavBackupTransfer': 'WebDAV configuration backup',
+      'systemTransferNotifications': 'System transfer notifications',
+      'navigationMenu': 'Меню навигации',
+      'localGalleryHelp': 'Справка по локальной галерее',
     };
   }
 }

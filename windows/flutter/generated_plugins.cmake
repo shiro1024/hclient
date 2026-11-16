@@ -4,17 +4,15 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   battery_plus
+  clipboard
   desktop_webview_window
   local_auth_windows
   pasteboard
   permission_handler_windows
+  platform_proxy
   screen_brightness_windows
-  screen_retriever
-  share_plus
-  smart_auth
-  sqlite3_flutter_libs
   url_launcher_windows
-  window_manager
+  share_plus
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

@@ -1,477 +1,191 @@
-import 'dart:convert';
-import 'dart:io' as io;
 import 'dart:io';
+import 'dart:convert';
 
-import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_instance/src/extension_instance.dart';
-import 'package:get/get_utils/get_utils.dart';
-import 'package:jhentai/src/database/dao/gallery_group_dao.dart';
-import 'package:jhentai/src/database/dao/gallery_history_dao.dart';
-import 'package:jhentai/src/database/dao/super_resolution_info_dao.dart';
-import 'package:jhentai/src/database/table/archive_downloaded.dart';
-import 'package:jhentai/src/database/table/archive_group.dart';
-import 'package:jhentai/src/database/table/block_rule.dart';
-import 'package:jhentai/src/database/table/dio_cache.dart';
-import 'package:jhentai/src/database/table/gallery_downloaded.dart';
-import 'package:jhentai/src/database/table/gallery_group.dart';
-import 'package:jhentai/src/database/table/gallery_history.dart';
-import 'package:jhentai/src/database/table/image.dart';
-import 'package:jhentai/src/database/table/local_config.dart';
-import 'package:jhentai/src/database/table/super_resolution_info.dart';
-import 'package:jhentai/src/database/table/tag.dart';
-import 'package:jhentai/src/database/table/tag_count.dart';
-import 'package:jhentai/src/enum/config_enum.dart';
-import 'package:jhentai/src/exception/upload_exception.dart';
-import 'package:jhentai/src/extension/directory_extension.dart';
-import 'package:jhentai/src/service/log.dart';
-import 'package:jhentai/src/service/path_service.dart';
-import 'package:path/path.dart';
+import 'package:path/path.dart' as path;
 import 'package:sqlite3/sqlite3.dart';
-import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 
-import '../model/gallery.dart';
-import '../model/gallery_history_model.dart';
-import '../service/archive_download_service.dart';
-import '../service/storage_service.dart';
-import 'dao/archive_dao.dart';
-import 'dao/archive_group_dao.dart';
-import 'dao/gallery_dao.dart';
+import '../service/path_service.dart';
+import 'table/archive_downloaded.dart';
+import 'table/archive_group.dart';
+import 'table/block_rule.dart';
+import 'table/content_copy.dart';
+import 'table/content_manifest.dart';
+import 'table/content_object_representation.dart';
+import 'table/content_page.dart';
+import 'table/content_page_replacement.dart';
+import 'table/content_remote_partition.dart';
+import 'table/content_remote_resource.dart';
+import 'table/content_work_item.dart';
+import 'table/dio_cache.dart';
+import 'table/gallery_downloaded.dart';
+import 'table/gallery_group.dart';
+import 'table/gallery_history.dart';
+import 'table/image.dart';
+import 'table/local_config.dart';
+import 'table/tag.dart';
+import 'table/tag_count.dart';
 
 part 'database.g.dart';
 
 @DriftDatabase(
   tables: [
-    OldSuperResolutionInfo,
-    SuperResolutionInfo,
     Tag,
     ArchiveDownloaded,
-    ArchiveDownloadedOld,
     ArchiveGroup,
     GalleryDownloaded,
-    GalleryDownloadedOld,
     GalleryGroup,
     Image,
-    GalleryHistory,
     GalleryHistoryV2,
     TagCount,
     DioCache,
     BlockRule,
     LocalConfig,
+    ContentCopy,
+    ContentPage,
+    ContentRemoteResource,
+    ContentRemotePartition,
+    ContentManifest,
+    ContentObjectRepresentation,
+    ContentWorkItem,
+    ContentPageReplacement,
   ],
 )
 class AppDb extends _$AppDb {
   AppDb() : super(_openConnection());
 
+  /// Inject a real temporary SQLite connection or an in-memory executor in tests.
+  AppDb.testing(QueryExecutor executor) : super(executor);
+
+  // shiro.hclient starts a new baseline. Do not reuse upstream schema versions.
   @override
-  int get schemaVersion => 25;
+  int get schemaVersion => 4;
+
+  Future<void> _backfillContentMetadata() async {
+    final rows = await customSelect("""
+      SELECT c.copy_id, c.metadata_json, g.category, g.uploader,
+        g.publish_time, g.group_name, NULL AS cover_url
+      FROM content_copy c JOIN gallery_downloaded_v2 g ON g.copy_id = c.copy_id
+      WHERE c.metadata_json IS NOT NULL AND g.download_status_index = 4
+      UNION ALL
+      SELECT c.copy_id, c.metadata_json, a.category, a.uploader,
+        a.publish_time, a.group_name, a.cover_url
+      FROM content_copy c JOIN archive_downloaded_v2 a ON a.copy_id = c.copy_id
+      WHERE c.metadata_json IS NOT NULL AND a.archive_status_index = 90
+    """).get();
+    final byCopy = <String, List<QueryRow>>{};
+    for (final row in rows) {
+      (byCopy[row.read<String>('copy_id')] ??= []).add(row);
+    }
+    for (final entry in byCopy.entries) {
+      final metadata = jsonDecode(
+        entry.value.first.read<String>('metadata_json'),
+      ) as Map<String, dynamic>;
+      final provider = <String, dynamic>{
+        ...?(metadata['providerMetadata'] as Map?),
+      };
+      for (final row in entry.value) {
+        for (final field in {
+          'category': 'category',
+          'uploader': 'uploader',
+          'publishTime': 'publish_time',
+          'coverUrl': 'cover_url',
+        }.entries) {
+          final value = row.readNullable<String>(field.value);
+          if (value != null) provider.putIfAbsent(field.key, () => value);
+        }
+      }
+      if (!metadata.containsKey('providerMetadata') ||
+          metadata['providerMetadata'] is Map) {
+        metadata['providerMetadata'] = provider;
+      }
+      metadata.putIfAbsent(
+        'collections',
+        () => entry.value
+            .map((row) => row.read<String>('group_name'))
+            .where((name) => name.isNotEmpty)
+            .toSet()
+            .toList(),
+      );
+      await customStatement(
+        'UPDATE content_copy SET metadata_json = ? WHERE copy_id = ?',
+        [jsonEncode(metadata), entry.key],
+      );
+    }
+  }
 
   @override
-  MigrationStrategy get migration {
-    return MigrationStrategy(
-      beforeOpen: (OpeningDetails details) async {
-        log.info('Database version before: ${details.versionBefore}, now: ${details.versionNow}');
-      },
-      onUpgrade: (Migrator m, int from, int to) async {
-        log.warning('Database version: $from -> $to');
-        if (from > to) {
-          return;
-        }
-
-        try {
-          await transaction(() async {
-            if (from < 2) {
-              await m.alterTable(TableMigration(image));
-            }
-            if (from < 3) {
-              await m.addColumn(galleryDownloadedOld, galleryDownloadedOld.downloadOriginalImage);
-            }
-            if (from < 4) {
-              await m.addColumn(galleryDownloadedOld, galleryDownloadedOld.priority);
-            }
-            if (from < 5) {
-              await m.addColumn(galleryDownloadedOld, galleryDownloadedOld.groupName);
-              await m.addColumn(archiveDownloadedOld, archiveDownloadedOld.groupName);
-              await _updateArchive(m);
-            }
-            if (from < 6) {
-              await _updateHistory(m);
-            }
-            if (5 <= from && from < 7) {
-              await m.addColumn(galleryDownloadedOld, galleryDownloadedOld.groupName);
-              await m.addColumn(archiveDownloadedOld, archiveDownloadedOld.groupName);
-            }
-            if (from < 8) {
-              await _createGroupTable(m);
-            }
-            if (from < 9) {
-              await _updateConfigFileLocation();
-            }
-            if (from < 10) {
-              await _deleteImageSizeColumn(m);
-            }
-            if (from < 11) {
-              await m.addColumn(galleryDownloadedOld, galleryDownloadedOld.sortOrder);
-              await m.addColumn(galleryGroup, galleryGroup.sortOrder);
-              await m.addColumn(archiveDownloadedOld, archiveDownloadedOld.sortOrder);
-              await m.addColumn(archiveGroup, archiveGroup.sortOrder);
-            }
-            if (from < 13) {
-              await m.createTable(superResolutionInfo);
-            }
-            if (from < 14) {
-              await m.createTable(tagCount);
-              await m.createTable(dioCache);
-              await m.createIndex(idxExpireDate).ignoreDuplicateIndex();
-              await m.createIndex(idxUrl).ignoreDuplicateIndex();
-            }
-            if (from < 15) {
-              await _migrateSuperResolutionInfo(m);
-            }
-            if (from < 16) {
-              await m.createIndex(idxKey).ignoreDuplicateIndex();
-              await m.createIndex(idxTagName).ignoreDuplicateIndex();
-            }
-            if (from < 17) {
-              await _migrateDownloadedInfo(m);
-            }
-            if (from < 18) {
-              await m.createIndex(idxLastReadTime).ignoreDuplicateIndex();
-            }
-            if (from < 19) {
-              await _migrateArchiveStatus(m);
-            }
-            if (from < 20) {
-              await m.createTable(blockRule);
-            }
-            if (17 <= from && from < 21) {
-              await m.alterTable(TableMigration(galleryDownloaded, newColumns: [galleryDownloaded.tags, galleryDownloaded.tagRefreshTime]));
-              await m.alterTable(TableMigration(archiveDownloaded, newColumns: [archiveDownloaded.tags, archiveDownloaded.tagRefreshTime]));
-            }
-            if (from < 21) {
-              await m.createIndex(gIdxTagRefreshTime).ignoreDuplicateIndex();
-              await m.createIndex(aIdxTagRefreshTime).ignoreDuplicateIndex();
-              await m.createTable(galleryHistoryV2);
-            }
-            if (from < 22) {
-              await m.createTable(localConfig);
-            }
-            if (17 <= from && from < 23) {
-              await m.alterTable(TableMigration(archiveDownloaded, newColumns: [archiveDownloaded.parseSource]));
-            }
-            if (from < 24) {
-              await m.alterTable(TableMigration(archiveDownloaded, newColumns: [archiveDownloaded.sanitizedTitle]));
-              await m.alterTable(TableMigration(galleryDownloaded, newColumns: [galleryDownloaded.sanitizedTitle]));
-              await _backfillSanitizedTitles();
-            }
-            if (from < 25) {
-              /// Add `originalImageUrl` column to the `image` table. The DB
-              /// `url` column previously stored whichever URL was actually
-              /// downloaded (regular or original); new rows store the regular
-              /// URL in `url` and the original URL here. Old rows keep `url`
-              /// as-is (may be original URL for download-original galleries)
-              /// and `originalImageUrl` stays null — runtime fallback
-              /// (`originalImageUrl ?? url`) handles this transparently.
-              try {
-                await m.addColumn(image, image.originalImageUrl);
-              } on SqliteException catch (e) {
-                log.warning('Add originalImageUrl column failed: ${e.message}');
-                if (e.extendedResultCode == SqlError.SQLITE_ERROR && e.message.contains('duplicate column name')) {
-                  log.warning('Ignore duplicate column name error: ${e.message}');
-                } else {
-                  rethrow;
-                }
-              }
-            }
-          });
-        } on Exception catch (e) {
-          log.error(e);
-          log.uploadError(e, extraInfos: {'from': from, 'to': to});
-          throw NotUploadException(e);
-        }
-      },
-    );
-  }
-
-  Future<void> _updateArchive(Migrator m) async {
-    try {
-      List<ArchiveDownloadedOldData> archives = await ArchiveDao.selectOldArchives();
-
-      await appDb.transaction(() async {
-        for (ArchiveDownloadedOldData a in archives) {
-          await ArchiveDao.updateOldArchive(
-            ArchiveDownloadedOldCompanion(
-              gid: Value(a.gid),
-              archiveStatusIndex: Value(a.archiveStatusIndex + 1),
-            ),
-          );
-        }
-      });
-    } on Exception catch (e) {
-      log.error('Update archive failed!', e);
-      rethrow;
-    }
-  }
-
-  Future<void> _updateHistory(Migrator m) async {
-    try {
-      await m.createTable(galleryHistory);
-
-      if (Get.isRegistered<StorageService>()) {
-        List<Gallery>? galleries = storageService.read<List>(ConfigEnum.oldGalleryHistory.key)?.map((e) => Gallery.fromJson(e)).toList();
-
-        List<GalleryHistoryModel>? historyModels = galleries
-            ?.map(
-              (g) => GalleryHistoryModel(
-                galleryUrl: g.galleryUrl,
-                title: g.title,
-                category: g.category,
-                coverUrl: g.cover.url,
-                pageCount: g.pageCount ?? 0,
-                rating: g.rating,
-                language: g.language ?? '',
-                uploader: g.uploader ?? '',
-                publishTime: g.publishTime,
-                isExpunged: g.isExpunged,
-                tags: g.tags.values.flattened.map((tag) => '${tag.tagData.namespace}:${tag.tagData.key}').toList(),
-              ),
-            )
-            .toList();
-
-        List<GalleryHistoryV2Data>? historyV2Datas = historyModels
-            ?.map(
-              (h) => GalleryHistoryV2Data(
-                gid: h.galleryUrl.gid,
-                jsonBody: jsonEncode(h),
-                lastReadTime: DateTime.now().toString(),
-              ),
-            )
-            .toList();
-
-        if (historyV2Datas != null) {
-          await GalleryHistoryDao.batchReplaceHistory(historyV2Datas);
-        }
-
-        storageService.remove(ConfigEnum.oldGalleryHistory.key);
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) => m.createAll(),
+    onUpgrade: (m, from, to) async {
+      if (from == 1 && to == 4) {
+        await m.createTable(contentCopy);
+        await m.addColumn(galleryDownloaded, galleryDownloaded.copyId);
+        await m.addColumn(archiveDownloaded, archiveDownloaded.copyId);
+        await m.createTable(contentPage);
+        await m.createTable(contentRemoteResource);
+        await m.createTable(contentRemotePartition);
+        await m.createTable(contentManifest);
+        await m.createTable(contentObjectRepresentation);
+        await m.createTable(contentWorkItem);
+        await m.createTable(contentPageReplacement);
+        await m.createIndex(contentCopyRootUnique);
+        await m.createIndex(contentCopyCurrentUnique);
+        return;
       }
-    } on Exception catch (e) {
-      log.error('Update history failed!', e);
-      log.uploadError(e);
-      rethrow;
-    }
-  }
-
-  Future<void> _createGroupTable(Migrator m) async {
-    try {
-      await m.createTable(galleryGroup);
-      await m.createTable(archiveGroup);
-
-      Set<String> galleryGroups = (await GalleryDao.selectOldGalleries()).map((g) => g.groupName ?? 'default'.tr).toSet();
-      Set<String> archiveGroups = (await ArchiveDao.selectOldArchives()).map((g) => g.groupName ?? 'default'.tr).toSet();
-
-      log.info('Migrate gallery groups: $galleryGroups');
-      log.info('Migrate archive groups: $archiveGroups');
-
-      await appDb.transaction(() async {
-        for (String groupName in galleryGroups) {
-          await GalleryGroupDao.insertGalleryGroup(GalleryGroupData(groupName: groupName, sortOrder: 0));
-        }
-        for (String groupName in archiveGroups) {
-          await ArchiveGroupDao.insertArchiveGroup(ArchiveGroupData(groupName: groupName, sortOrder: 0));
-        }
-      });
-    } on Exception catch (e) {
-      log.error('Create Group Table failed!', e);
-      log.uploadError(e);
-      rethrow;
-    }
-  }
-
-  /// copy files
-  Future<void> _updateConfigFileLocation() async {
-    await pathService.appSupportDir?.copy(pathService.getVisibleDir().path);
-  }
-
-  Future<void> _deleteImageSizeColumn(Migrator m) async {
-    await m.alterTable(TableMigration(archiveDownloaded));
-    await m.alterTable(TableMigration(image));
-  }
-
-  Future<void> _migrateSuperResolutionInfo(Migrator m) async {
-    try {
-      await m.createTable(superResolutionInfo);
-
-      List<OldSuperResolutionInfoData> oldSuperResolutionInfo = await SuperResolutionInfoDao.selectAllOldSuperResolutionInfo();
-
-      await appDb.transaction(() async {
-        for (OldSuperResolutionInfoData old in oldSuperResolutionInfo) {
-          await SuperResolutionInfoDao.insertSuperResolutionInfo(
-            SuperResolutionInfoData(
-              gid: old.gid,
-              type: old.type,
-              status: old.status,
-              imageStatuses: old.imageStatuses,
-            ),
-          );
-        }
-      });
-    } on Exception catch (e) {
-      log.error('Migrate super resolution info failed!', e);
-      log.uploadError(e);
-      rethrow;
-    }
-  }
-
-  Future<void> _migrateDownloadedInfo(Migrator m) async {
-    try {
-      await m.createTable(galleryDownloaded);
-      await m.createTable(archiveDownloaded);
-
-      List<GalleryDownloadedOldData> galleries = await GalleryDao.selectOldGalleries();
-      await appDb.transaction(() async {
-        for (GalleryDownloadedOldData g in galleries) {
-          await GalleryDao.insertGallery(
-            GalleryDownloadedCompanion.insert(
-              gid: Value(g.gid),
-              token: g.token,
-              title: g.title,
-              category: g.category,
-              pageCount: g.pageCount,
-              galleryUrl: g.galleryUrl,
-              oldVersionGalleryUrl: Value(g.oldVersionGalleryUrl),
-              uploader: Value(g.uploader),
-              publishTime: g.publishTime,
-              downloadStatusIndex: g.downloadStatusIndex,
-              insertTime: g.insertTime!,
-              downloadOriginalImage: Value(g.downloadOriginalImage),
-              priority: g.priority ?? 0,
-              sortOrder: Value(g.sortOrder),
-              groupName: g.groupName!,
-              tagRefreshTime: Value(DateTime.now().toString()),
-            ),
-          );
-        }
-      });
-
-      List<ArchiveDownloadedOldData> archives = await ArchiveDao.selectOldArchives();
-      await appDb.transaction(() async {
-        for (ArchiveDownloadedOldData a in archives) {
-          await ArchiveDao.insertArchive(
-            ArchiveDownloadedCompanion.insert(
-              gid: Value(a.gid),
-              token: a.token,
-              title: a.title,
-              category: a.category,
-              pageCount: a.pageCount,
-              galleryUrl: a.galleryUrl,
-              coverUrl: a.coverUrl,
-              uploader: Value(a.uploader),
-              size: a.size,
-              publishTime: a.publishTime,
-              archiveStatusCode: a.archiveStatusIndex,
-              archivePageUrl: a.archivePageUrl,
-              downloadPageUrl: Value(a.downloadPageUrl),
-              downloadUrl: Value(a.downloadUrl),
-              isOriginal: a.isOriginal,
-              insertTime: a.insertTime!,
-              sortOrder: Value(a.sortOrder),
-              groupName: a.groupName!,
-              tagRefreshTime: Value(DateTime.now().toString()),
-              parseSource: Value(ArchiveParseSource.official.code),
-            ),
-          );
-        }
-      });
-    } catch (e) {
-      log.error('Migrate downloaded info failed!', e);
-      log.uploadError(e);
-      rethrow;
-    }
-  }
-
-  Future<void> _migrateArchiveStatus(Migrator m) async {
-    await ArchiveDao.updateArchiveStatus(OldArchiveStatus.none.index, ArchiveStatus.unlocking.code);
-    await ArchiveDao.updateArchiveStatus(OldArchiveStatus.needReUnlock.index, ArchiveStatus.needReUnlock.code);
-    await ArchiveDao.updateArchiveStatus(OldArchiveStatus.paused.index, ArchiveStatus.paused.code);
-    await ArchiveDao.updateArchiveStatus(OldArchiveStatus.unlocking.index, ArchiveStatus.unlocking.code);
-    await ArchiveDao.updateArchiveStatus(OldArchiveStatus.parsingDownloadPageUrl.index, ArchiveStatus.parsingDownloadPageUrl.code);
-    await ArchiveDao.updateArchiveStatus(OldArchiveStatus.parsingDownloadUrl.index, ArchiveStatus.parsingDownloadUrl.code);
-    await ArchiveDao.updateArchiveStatus(OldArchiveStatus.downloading.index, ArchiveStatus.downloading.code);
-    await ArchiveDao.updateArchiveStatus(OldArchiveStatus.downloaded.index, ArchiveStatus.downloaded.code);
-    await ArchiveDao.updateArchiveStatus(OldArchiveStatus.unpacking.index, ArchiveStatus.unpacking.code);
-    await ArchiveDao.updateArchiveStatus(OldArchiveStatus.completed.index, ArchiveStatus.completed.code);
-  }
-
-  /// Back-fill [sanitizedTitle] for existing rows using the old character-count
-  /// truncation algorithm so their on-disk paths remain unchanged after the
-  /// upgrade to the byte-based algorithm.
-  Future<void> _backfillSanitizedTitles() async {
-    final RegExp illegalChars = RegExp(r'[/|?,:*"<>\\.]');
-
-    String legacyArchiveTitle(String rawTitle) {
-      String title = rawTitle.replaceAll(illegalChars, ' ').trim();
-      if (title.length > 80) {
-        title = title.substring(0, 80).trim();
-      }
-      return title;
-    }
-
-    String legacyGalleryTitle(String rawTitle) {
-      String title = rawTitle.replaceAll(illegalChars, ' ').trim();
-      if (title.length > 85) {
-        title = title.substring(0, 85).trim();
-      }
-      return title;
-    }
-
-    final List<ArchiveDownloadedData> archives = await ArchiveDao.selectArchives();
-    await transaction(() async {
-      for (final ArchiveDownloadedData a in archives) {
-        await (update(archiveDownloaded)..where((t) => t.gid.equals(a.gid))).write(
-          ArchiveDownloadedCompanion(sanitizedTitle: Value(legacyArchiveTitle(a.title))),
+      if (from == 2 && to == 4) {
+        await m.addColumn(contentCopy, contentCopy.libraryNamespace);
+        await m.addColumn(contentPage, contentPage.sourcePageUrl);
+        await m.addColumn(contentWorkItem, contentWorkItem.source);
+        await m.addColumn(contentWorkItem, contentWorkItem.finishAction);
+        await customStatement(
+          "UPDATE content_work_item SET finish_action = CASE WHEN cleanup_intent IS NULL THEN 'keep' ELSE 'release' END",
         );
-      }
-    });
-
-    final List<GalleryDownloadedData> galleries = await GalleryDao.selectGalleries();
-    await transaction(() async {
-      for (final GalleryDownloadedData g in galleries) {
-        await (update(galleryDownloaded)..where((t) => t.gid.equals(g.gid))).write(
-          GalleryDownloadedCompanion(sanitizedTitle: Value(legacyGalleryTitle(g.title))),
+        await customStatement(
+          'ALTER TABLE content_work_item DROP COLUMN cleanup_intent',
         );
+        await _backfillContentMetadata();
+        await customStatement("""
+          UPDATE content_page AS p SET source_page_url =
+            CASE WHEN instr(g.gallery_url, 'exhentai.org') > 0
+              THEN 'https://exhentai.org' ELSE 'https://e-hentai.org' END
+              || '/s/' || i.imageHash || '/' || g.gid || '-' || (i.serialNo + 1)
+          FROM gallery_downloaded_v2 g JOIN image i ON i.gid = g.gid
+          WHERE g.copy_id = p.copy_id AND i.serialNo = p.ordinal
+            AND i.imageHash != '' 
+        """);
+        await customStatement("""
+          UPDATE content_copy SET library_namespace = (
+            SELECT w.target_namespace FROM content_work_item w
+            WHERE w.copy_id = content_copy.copy_id AND w.kind = 'restore'
+              AND w.state = 'completed'
+            ORDER BY w.updated_at DESC, w.work_item_id LIMIT 1
+          ) WHERE NOT EXISTS (
+            SELECT 1 FROM gallery_downloaded_v2 g WHERE g.copy_id = content_copy.copy_id
+          ) AND NOT EXISTS (
+            SELECT 1 FROM archive_downloaded_v2 a WHERE a.copy_id = content_copy.copy_id
+          )
+        """);
       }
-    });
-  }
+      if ((from == 2 || from == 3) && to == 4) {
+        await m.addColumn(contentPage, contentPage.codecProfile);
+        await m.addColumn(contentPage, contentPage.objectHash);
+        await m.addColumn(contentPage, contentPage.storedLength);
+        return;
+      }
+      throw StateError('No database migration defined from $from to $to');
+    },
+  );
 }
 
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    final file = io.File(join(pathService.getVisibleDir().path, 'db.sqlite'));
-
-    if (Platform.isAndroid) {
-      await applyWorkaroundToOpenSqlite3OnOldAndroidVersions();
-    }
-
-    sqlite3.tempDirectory = pathService.tempDir.path;
-
-    return NativeDatabase(file);
-  });
-}
+LazyDatabase _openConnection() => LazyDatabase(() async {
+  final temporaryDirectory = pathService.tempDir.path;
+  final file = File(path.join(pathService.getVisibleDir().path, 'db.sqlite'));
+  return NativeDatabase.createInBackground(
+    file,
+    isolateSetup: () => sqlite3.tempDirectory = temporaryDirectory,
+  );
+});
 
 AppDb appDb = AppDb();
-
-extension _MigragateDuplicateIndexErrorCache on Future<void> {
-  Future<void> ignoreDuplicateIndex() async {
-    try {
-      await this;
-    } on SqliteException catch (e) {
-      if (e.resultCode == SqlError.SQLITE_ERROR && RegExp(r'index \S+ already exists').hasMatch(e.message)) {
-        log.warning('Ignore duplicate index error: ${e.message}');
-      } else {
-        rethrow;
-      }
-    }
-  }
-}

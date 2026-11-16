@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -149,11 +150,7 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
 
     Map<String, dynamic> userInfoOrErrorMsg;
     try {
-      userInfoOrErrorMsg = await ehRequest.requestLogin(
-        state.userName!,
-        state.password!,
-        EHSpiderParser.loginPage2UserInfoOrErrorMsg,
-      );
+      userInfoOrErrorMsg = await ehRequest.requestLogin(state.userName!, state.password!, EHSpiderParser.loginPage2UserInfoOrErrorMsg);
     } on DioException catch (e) {
       log.error('loginFail'.tr, e.errorMsg);
       snack('loginFail'.tr, e.errorMsg ?? '');
@@ -186,12 +183,7 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
       ipbPassHash: userInfoOrErrorMsg['ipbPassHash'],
     );
 
-    ehRequest
-        .requestForum(
-      userInfoOrErrorMsg['ipbMemberId'],
-      EHSpiderParser.profilePage2UserInfo,
-    )
-        .then((userInfo) {
+    ehRequest.requestForum(userInfoOrErrorMsg['ipbMemberId'], EHSpiderParser.profilePage2UserInfo).then((userInfo) {
       userSetting.saveUserNameAndAvatarAndNickName(
         userName: userInfo!['userName']!,
         avatarImgUrl: userInfo['avatarImgUrl'],
@@ -212,16 +204,15 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
       return;
     }
 
-    await ehRequest.storeEHCookies([
-      Cookie('ipb_member_id', state.ipbMemberId!),
-      Cookie('ipb_pass_hash', state.ipbPassHash!),
-    ]);
+    await ehRequest.storeEHCookies([Cookie('ipb_member_id', state.ipbMemberId!), Cookie('ipb_pass_hash', state.ipbPassHash!)]);
 
     bool useEXSite = false;
-    if (state.igneous != null && state.igneous != '' && state.igneous != 'null' && state.igneous != 'mystery' && state.igneous != 'deleted') {
-      await ehRequest.storeEHCookies([
-        Cookie('igneous', state.igneous!),
-      ]);
+    if (state.igneous != null &&
+        state.igneous != '' &&
+        state.igneous != 'null' &&
+        state.igneous != 'mystery' &&
+        state.igneous != 'deleted') {
+      await ehRequest.storeEHCookies([Cookie('igneous', state.igneous!)]);
       useEXSite = true;
     }
 
@@ -302,7 +293,7 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
 
     await ehRequest.requestLogout();
 
-    if (GetPlatform.isWindows || GetPlatform.isLinux) {
+    if (GetPlatform.isWindows) {
       if (!await WebviewWindow.isWebviewAvailable()) {
         toast('webLoginIsDisabled'.tr);
         return;
@@ -313,13 +304,13 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
           windowWidth: 800,
           windowHeight: 600,
           title: EHConsts.appName,
-          userDataFolderWindows: pathService.getVisibleDir().path,
+          windows: WindowsWebviewOptions(userDataFolder: pathService.getVisibleDir().path),
         ),
       );
       webview.addScriptToExecuteOnDocumentCreated('document.cookie = "ipb_member_id=${state.ipbMemberId}"');
       webview.addScriptToExecuteOnDocumentCreated('document.cookie = "ipb_pass_hash=${state.ipbPassHash}"');
-      webview.isNavigating.addListener(() {
-        if (!webview.isNavigating.value) {
+      webview.navigationState.addListener(() {
+        if (!webview.navigationState.value.isLoading) {
           _onDesktopPageLoaded4CookieVerification(webview);
         }
       });
@@ -332,15 +323,14 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
 
       webview.launch(EHConsts.EForums);
     } else {
-      List<Cookie> cookies = [
-        Cookie('ipb_member_id', state.ipbMemberId!),
-        Cookie('ipb_pass_hash', state.ipbPassHash!),
-      ];
+      List<Cookie> cookies = [Cookie('ipb_member_id', state.ipbMemberId!), Cookie('ipb_pass_hash', state.ipbPassHash!)];
       bool useExSite = false;
-      if (state.igneous != null && state.igneous != '' && state.igneous != 'null' && state.igneous != 'mystery' && state.igneous != 'deleted') {
-        await ehRequest.storeEHCookies([
-          Cookie('igneous', state.igneous!),
-        ]);
+      if (state.igneous != null &&
+          state.igneous != '' &&
+          state.igneous != 'null' &&
+          state.igneous != 'mystery' &&
+          state.igneous != 'deleted') {
+        await ehRequest.storeEHCookies([Cookie('igneous', state.igneous!)]);
         useExSite = true;
       }
 
@@ -350,7 +340,8 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
           'title': 'login'.tr,
           'url': EHConsts.EForums,
           'cookies': CookieUtil.parse2String(cookies),
-          'onPageFinished': (String url, WebViewController controller) => (_onMobilePageStarted4CookieVerification(url, controller, cookies, useExSite)),
+          'onPageFinished': (String url, WebViewController controller) =>
+              (_onMobilePageStarted4CookieVerification(url, controller, cookies, useExSite)),
         },
       )?.whenComplete(() {
         if (state.loginState == LoadingState.loading) {
@@ -367,10 +358,10 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
       return;
     }
 
-    String? rawGuestHint = await webview.evaluateJavaScript('''
+    String rawGuestHint = (await webview.evaluateJavaScript('''
     document.querySelector('#userlinksguest')?.innerText ?? ""
-    ''');
-    
+    ''')).toString();
+
     String guestHint;
     try {
       guestHint = jsonDecode(rawGuestHint!);
@@ -389,9 +380,9 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
       return;
     }
 
-    String? rawUsername = await webview.evaluateJavaScript('''
+    String rawUsername = (await webview.evaluateJavaScript('''
     document.querySelector('.home > b > a')?.innerText ?? ""
-    ''');
+    ''')).toString();
 
     String username;
     try {
@@ -403,21 +394,16 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
       return;
     }
 
-    await ehRequest.storeEHCookies([
-      Cookie('ipb_member_id', state.ipbMemberId!),
-      Cookie('ipb_pass_hash', state.ipbPassHash!),
-    ]);
-    if (state.igneous != null && state.igneous != '' && state.igneous != 'null' && state.igneous != 'mystery' && state.igneous != 'deleted') {
-      await ehRequest.storeEHCookies([
-        Cookie('igneous', state.igneous!),
-      ]);
+    await ehRequest.storeEHCookies([Cookie('ipb_member_id', state.ipbMemberId!), Cookie('ipb_pass_hash', state.ipbPassHash!)]);
+    if (state.igneous != null &&
+        state.igneous != '' &&
+        state.igneous != 'null' &&
+        state.igneous != 'mystery' &&
+        state.igneous != 'deleted') {
+      await ehRequest.storeEHCookies([Cookie('igneous', state.igneous!)]);
       ehSetting.site.value = 'EX';
     }
-    await userSetting.saveUserInfo(
-      userName: username,
-      ipbMemberId: int.parse(state.ipbMemberId!),
-      ipbPassHash: state.ipbPassHash!,
-    );
+    await userSetting.saveUserInfo(userName: username, ipbMemberId: int.parse(state.ipbMemberId!), ipbPassHash: state.ipbPassHash!);
 
     log.info('Login success by web via webview.');
     state.loginState = LoadingState.success;
@@ -427,11 +413,17 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
 
     untilRoute(
       currentRoute: Routes.login,
-      predicate: (route) => route.settings.name == Routes.settingAccount || route.settings.name == Routes.blank || route.settings.name == Routes.home,
+      predicate: (route) =>
+          route.settings.name == Routes.settingAccount || route.settings.name == Routes.blank || route.settings.name == Routes.home,
     );
   }
 
-  Future<void> _onMobilePageStarted4CookieVerification(String url, WebViewController controller, List<Cookie> cookies, bool useExSite) async {
+  Future<void> _onMobilePageStarted4CookieVerification(
+    String url,
+    WebViewController controller,
+    List<Cookie> cookies,
+    bool useExSite,
+  ) async {
     if (url != EHConsts.EForums) {
       return;
     }
@@ -446,7 +438,7 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
     } catch (e) {
       guestHint = rawGuestHint!;
     }
-    
+
     bool loginFailed = !isEmptyOrNull(guestHint) && guestHint != 'null';
     if (loginFailed) {
       log.info('Login failed by cookie via webview.');
@@ -471,16 +463,12 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
     if (isEmptyOrNull(username) || username == 'null') {
       return;
     }
-    
+
     await ehRequest.storeEHCookies(cookies);
     if (useExSite) {
       ehSetting.site.value = 'EX';
     }
-    await userSetting.saveUserInfo(
-      userName: username,
-      ipbMemberId: int.parse(state.ipbMemberId!),
-      ipbPassHash: state.ipbPassHash!,
-    );
+    await userSetting.saveUserInfo(userName: username, ipbMemberId: int.parse(state.ipbMemberId!), ipbPassHash: state.ipbPassHash!);
 
     log.info('Login success by web via webview.');
     state.loginState = LoadingState.success;
@@ -498,16 +486,15 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
       return;
     }
 
-    ehRequest.storeEHCookies([
-      Cookie('ipb_member_id', state.ipbMemberId!),
-      Cookie('ipb_pass_hash', state.ipbPassHash!),
-    ]);
+    ehRequest.storeEHCookies([Cookie('ipb_member_id', state.ipbMemberId!), Cookie('ipb_pass_hash', state.ipbPassHash!)]);
 
     bool useEXSite = false;
-    if (state.igneous != null && state.igneous != '' && state.igneous != 'null' && state.igneous != 'mystery' && state.igneous != 'deleted') {
-      ehRequest.storeEHCookies([
-        Cookie('igneous', state.igneous!),
-      ]);
+    if (state.igneous != null &&
+        state.igneous != '' &&
+        state.igneous != 'null' &&
+        state.igneous != 'mystery' &&
+        state.igneous != 'deleted') {
+      ehRequest.storeEHCookies([Cookie('igneous', state.igneous!)]);
       useEXSite = true;
     }
 
@@ -535,7 +522,7 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
   }
 
   Future<void> handleWebLogin() async {
-    if (GetPlatform.isWindows || GetPlatform.isLinux) {
+    if (GetPlatform.isWindows) {
       if (!await WebviewWindow.isWebviewAvailable()) {
         toast('webLoginIsDisabled'.tr);
         return;
@@ -545,22 +532,16 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
           windowWidth: 800,
           windowHeight: 600,
           title: EHConsts.appName,
-          userDataFolderWindows: pathService.getVisibleDir().path,
+          windows: WindowsWebviewOptions(userDataFolder: pathService.getVisibleDir().path),
         ),
       );
-      webview.addOnUrlRequestCallback((url) {
-        _onDesktopPageStarted4WebLogin(webview, url);
+      await webview.setOnUrlRequestCallback((url) {
+        unawaited(_onDesktopPageStarted4WebLogin(webview, url));
+        return true;
       });
       webview.launch(EHConsts.ELogin);
     } else {
-      toRoute(
-        Routes.webview,
-        arguments: {
-          'title': 'login'.tr,
-          'url': EHConsts.ELogin,
-          'onPageStarted': _onMobilePageStarted4WebLogin,
-        },
-      );
+      toRoute(Routes.webview, arguments: {'title': 'login'.tr, 'url': EHConsts.ELogin, 'onPageStarted': _onMobilePageStarted4WebLogin});
     }
   }
 
@@ -592,7 +573,8 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
       toast('loginSuccess'.tr);
       untilRoute(
         currentRoute: Routes.login,
-        predicate: (route) => route.settings.name == Routes.settingAccount || route.settings.name == Routes.blank || route.settings.name == Routes.home,
+        predicate: (route) =>
+            route.settings.name == Routes.settingAccount || route.settings.name == Routes.blank || route.settings.name == Routes.home,
       );
 
       /// get username and avatar

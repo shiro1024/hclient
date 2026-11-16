@@ -1,3 +1,6 @@
+import '../pages/download/transfer_navigation.dart';
+import '../pages/setting/webdav/setting_webdav_page.dart';
+
 import 'package:get/get.dart';
 import 'package:jhentai/src/extension/widget_extension.dart';
 import 'package:jhentai/src/pages/details/details_page.dart';
@@ -16,7 +19,6 @@ import 'package:jhentai/src/pages/ranklist/ranklist_page.dart';
 import 'package:jhentai/src/pages/read/read_page.dart';
 import 'package:jhentai/src/pages/search/mobile_v2/search_page_mobile_v2.dart';
 import 'package:jhentai/src/pages/search/quick_search/quick_search_page.dart';
-import 'package:jhentai/src/pages/setting/about/setting_about_page.dart';
 import 'package:jhentai/src/pages/setting/account/cookie/cookie_page.dart';
 import 'package:jhentai/src/pages/setting/account/login/login_page.dart';
 import 'package:jhentai/src/pages/setting/advanced/setting_advanced_page.dart';
@@ -51,7 +53,6 @@ import '../pages/search/desktop/desktop_search_page.dart';
 import '../pages/setting/account/setting_account_page.dart';
 import '../pages/setting/advanced/loglist/log/log_page.dart';
 import '../pages/setting/advanced/loglist/log_list_page.dart';
-import '../pages/setting/advanced/super_resolution/setting_super_resolution_page.dart';
 import '../pages/setting/download/archive_bot/archive_bot_settings_page.dart';
 import '../pages/setting/preference/block_rule/add_block_rule/configure_blocking_rule_page.dart';
 import '../pages/setting/style/page_list_style/setting_page_list_style_page.dart';
@@ -104,9 +105,10 @@ class Routes {
   static const String settingPerformance = "/setting_performance";
   static const String settingMouseWheel = "/setting_mouse_wheel";
   static const String settingCloud = "/setting_cloud";
+  static const String settingWebDav = "/setting_webdav";
   static const String settingSecurity = "/setting_security";
-  static const String settingAbout = "/setting_about";
-  static const String settingKeyboardShortcuts = "/setting_read/keyboard_shortcuts";
+  static const String settingKeyboardShortcuts =
+      "/setting_read/keyboard_shortcuts";
   static const String settingTapZoneStyle = "/setting_read/tapZoneStyle";
 
   static const String login = "/setting_account/login";
@@ -118,21 +120,25 @@ class Routes {
   static const String tagSets = "/setting_EH/tagSets";
 
   static const String blockingRules = "/setting_preference/blockingRules";
-  static const String configureBlockingRules = "/setting_preference/blockRules/configureBlockingRules";
+  static const String configureBlockingRules =
+      "/setting_preference/blockRules/configureBlockingRules";
 
   static const String hostMapping = "/setting_network/hostMapping";
   static const String proxy = "/setting_network/proxy";
 
-  static const String extraGalleryScanPath = "/setting_download/extraGalleryScanPath";
+  static const String extraGalleryScanPath =
+      "/setting_download/extraGalleryScanPath";
   static const String archiveBotSettings = '/setting/download/archive_bot';
 
-  static const String superResolution = "/setting_advanced/superResolution";
   static const String logList = "/setting_advanced/logList";
   static const String log = "/setting_advanced/logList/log";
 
   static const String configSync = "/setting_cloud/configSync";
 
-  static final Transition defaultTransition = preferenceSetting.enableSwipeBackGesture.isTrue ? Transition.cupertino : Transition.fadeIn;
+  static final Transition defaultTransition =
+      preferenceSetting.enableSwipeBackGesture.isTrue
+      ? Transition.cupertino
+      : Transition.fadeIn;
 
   static List<EHPage> pages = <EHPage>[
     EHPage(
@@ -233,7 +239,16 @@ class Routes {
     ),
     EHPage(
       name: download,
-      page: () => const DownloadPage(),
+      page: () => DownloadPage(
+        initialGalleryType: Get.arguments is TransferDownloadNavigation
+            ? (Get.arguments as TransferDownloadNavigation).galleryType
+            : Get.arguments is DownloadPageGalleryType
+            ? Get.arguments as DownloadPageGalleryType
+            : null,
+        initialShowCloudTransfers:
+            Get.arguments is TransferDownloadNavigation &&
+            (Get.arguments as TransferDownloadNavigation).showCloudTransfers,
+      ),
       transition: defaultTransition,
       side: Side.left,
     ),
@@ -269,13 +284,16 @@ class Routes {
     ),
     EHPage(
       name: quickSearch,
-      page: () => QuickSearchPage(automaticallyImplyLeading: true).withEscOrFifthButton2BackRightRoute(),
+      page: () =>
+          QuickSearchPage(automaticallyImplyLeading: true)
+              .withEscOrFifthButton2BackRightRoute(),
       transition: defaultTransition,
       offAllBefore: false,
     ),
     EHPage(
       name: settingAccount,
-      page: () => const SettingAccountPage().withEscOrFifthButton2BackRightRoute(),
+      page: () =>
+          const SettingAccountPage().withEscOrFifthButton2BackRightRoute(),
       transition: defaultTransition,
     ),
     EHPage(
@@ -285,7 +303,8 @@ class Routes {
     ),
     EHPage(
       name: settingStyle,
-      page: () => const SettingStylePage().withEscOrFifthButton2BackRightRoute(),
+      page: () =>
+          const SettingStylePage().withEscOrFifthButton2BackRightRoute(),
       transition: defaultTransition,
     ),
     EHPage(
@@ -301,7 +320,8 @@ class Routes {
     ),
     EHPage(
       name: settingTapZoneStyle,
-      page: () => const SettingTapZonePage().withEscOrFifthButton2BackRightRoute(),
+      page: () =>
+          const SettingTapZonePage().withEscOrFifthButton2BackRightRoute(),
       transition: defaultTransition,
       offAllBefore: false,
     ),
@@ -317,33 +337,39 @@ class Routes {
     ),
     EHPage(
       name: settingDownload,
-      page: () => const SettingDownloadPage().withEscOrFifthButton2BackRightRoute(),
+      page: () =>
+          const SettingDownloadPage().withEscOrFifthButton2BackRightRoute(),
       transition: defaultTransition,
     ),
     EHPage(
       name: settingPerformance,
-      page: () => SettingPerformancePage().withEscOrFifthButton2BackRightRoute(),
+      page: () =>
+          SettingPerformancePage().withEscOrFifthButton2BackRightRoute(),
       transition: defaultTransition,
     ),
     EHPage(
       name: settingMouseWheel,
-      page: () => const SettingMouseWheelPage().withEscOrFifthButton2BackRightRoute(),
+      page: () =>
+          const SettingMouseWheelPage().withEscOrFifthButton2BackRightRoute(),
       transition: defaultTransition,
     ),
     EHPage(
       name: settingAdvanced,
-      page: () => const SettingAdvancedPage().withEscOrFifthButton2BackRightRoute(),
+      page: () =>
+          const SettingAdvancedPage().withEscOrFifthButton2BackRightRoute(),
       transition: defaultTransition,
     ),
     EHPage(
       name: settingFrameRate,
-      page: () => const SettingFrameRatePage().withEscOrFifthButton2BackRightRoute(),
+      page: () =>
+          const SettingFrameRatePage().withEscOrFifthButton2BackRightRoute(),
       transition: defaultTransition,
       offAllBefore: false,
     ),
     EHPage(
       name: settingCloud,
-      page: () => const SettingCloudPage().withEscOrFifthButton2BackRightRoute(),
+      page: () =>
+          const SettingCloudPage().withEscOrFifthButton2BackRightRoute(),
       transition: defaultTransition,
     ),
     EHPage(
@@ -352,13 +378,15 @@ class Routes {
       transition: defaultTransition,
     ),
     EHPage(
-      name: settingSecurity,
-      page: () => const SettingSecurityPage().withEscOrFifthButton2BackRightRoute(),
+      name: settingWebDav,
+      page: () =>
+          const SettingWebDavPage().withEscOrFifthButton2BackRightRoute(),
       transition: defaultTransition,
     ),
     EHPage(
-      name: settingAbout,
-      page: () => const SettingAboutPage().withEscOrFifthButton2BackRightRoute(),
+      name: settingSecurity,
+      page: () =>
+          const SettingSecurityPage().withEscOrFifthButton2BackRightRoute(),
       transition: defaultTransition,
     ),
     EHPage(
@@ -375,13 +403,15 @@ class Routes {
     ),
     EHPage(
       name: themeColor,
-      page: () => const SettingThemeColorPage().withEscOrFifthButton2BackRightRoute(),
+      page: () =>
+          const SettingThemeColorPage().withEscOrFifthButton2BackRightRoute(),
       transition: defaultTransition,
       offAllBefore: false,
     ),
     EHPage(
       name: pageListStyle,
-      page: () => SettingPageListStylePage().withEscOrFifthButton2BackRightRoute(),
+      page: () =>
+          SettingPageListStylePage().withEscOrFifthButton2BackRightRoute(),
       transition: defaultTransition,
       offAllBefore: false,
     ),
@@ -399,31 +429,29 @@ class Routes {
     ),
     EHPage(
       name: configureBlockingRules,
-      page: () => ConfigureBlockingRulePage().withEscOrFifthButton2BackRightRoute(),
+      page: () =>
+          ConfigureBlockingRulePage().withEscOrFifthButton2BackRightRoute(),
       transition: defaultTransition,
       offAllBefore: false,
     ),
     EHPage(
       name: proxy,
-      page: () => const SettingProxyPage().withEscOrFifthButton2BackRightRoute(),
+      page: () =>
+          const SettingProxyPage().withEscOrFifthButton2BackRightRoute(),
       transition: defaultTransition,
       offAllBefore: false,
     ),
     EHPage(
       name: extraGalleryScanPath,
-      page: () => const ExtraGalleryScanPathPage().withEscOrFifthButton2BackRightRoute(),
+      page: () => const ExtraGalleryScanPathPage()
+          .withEscOrFifthButton2BackRightRoute(),
       transition: defaultTransition,
       offAllBefore: false,
     ),
     EHPage(
       name: archiveBotSettings,
-      page: () => const ArchiveBotSettingsPage().withEscOrFifthButton2BackRightRoute(),
-      transition: defaultTransition,
-      offAllBefore: false,
-    ),
-    EHPage(
-      name: superResolution,
-      page: () => const SettingSuperResolutionPage().withEscOrFifthButton2BackRightRoute(),
+      page: () =>
+          const ArchiveBotSettingsPage().withEscOrFifthButton2BackRightRoute(),
       transition: defaultTransition,
       offAllBefore: false,
     ),

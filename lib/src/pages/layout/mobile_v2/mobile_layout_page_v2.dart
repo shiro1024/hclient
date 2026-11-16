@@ -15,6 +15,7 @@ import 'package:jhentai/src/service/quick_search_service.dart';
 import 'package:jhentai/src/setting/user_setting.dart';
 import 'package:jhentai/src/utils/route_util.dart';
 import 'package:jhentai/src/widget/horizontal_safe_area.dart';
+import 'package:jhentai/src/widget/edge_drawer_scope.dart';
 import 'package:jhentai/src/widget/will_pop_interceptor.dart';
 
 import '../../../network/eh_request.dart';
@@ -32,17 +33,23 @@ class MobileLayoutPageV2 extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(
       () => WillPopInterceptor(
-        child: Scaffold(
-          key: MobileLayoutPageV2State.scaffoldKey,
-          drawerEdgeDragWidth: preferenceSetting.drawerGestureEdgeWidth.value.toDouble(),
-          drawer: buildLeftDrawer(context),
-          drawerEnableOpenDragGesture: preferenceSetting.enableLeftMenuDrawerGesture.isTrue,
-          endDrawer: buildRightDrawer(),
-          endDrawerEnableOpenDragGesture: preferenceSetting.enableQuickSearchDrawerGesture.isTrue,
+        child: EdgeDrawerScope(
+          scaffoldKey: MobileLayoutPageV2State.scaffoldKey,
+          leftEnabled: preferenceSetting.enableLeftMenuDrawerGesture.isTrue,
+          rightEnabled: preferenceSetting.enableQuickSearchDrawerGesture.isTrue,
+          builder: (context, drawersChanged) => Scaffold(
+            key: MobileLayoutPageV2State.scaffoldKey,
+            drawer: buildLeftDrawer(context),
+            drawerEnableOpenDragGesture: preferenceSetting.enableLeftMenuDrawerGesture.isTrue,
+            onDrawerChanged: (_) => drawersChanged(),
+            endDrawer: buildRightDrawer(),
+            endDrawerEnableOpenDragGesture: preferenceSetting.enableQuickSearchDrawerGesture.isTrue,
+            onEndDrawerChanged: (_) => drawersChanged(),
 
-          /// tab pages are not routes, so they are not wrapped by [EHPage]. Drawers and bottom bar avoid insets by themselves.
-          body: HorizontalSafeArea(child: buildBody()),
-          bottomNavigationBar: preferenceSetting.hideBottomBar.isTrue ? null : buildBottomNavigationBar(context),
+            /// tab pages are not routes, so they are not wrapped by [EHPage]. Drawers and bottom bar avoid insets by themselves.
+            body: HorizontalSafeArea(child: buildBody()),
+            bottomNavigationBar: preferenceSetting.hideBottomBar.isTrue ? null : buildBottomNavigationBar(context),
+          ),
         ),
       ),
     );
@@ -139,12 +146,7 @@ class MobileLayoutPageV2 extends StatelessWidget {
     return Stack(
       children: state.icons
           .where((icon) => icon.shouldRender)
-          .mapIndexed(
-            (index, icon) => Offstage(
-              offstage: state.selectedDrawerTabOrder != index,
-              child: icon.page.call(),
-            ),
-          )
+          .mapIndexed((index, icon) => Offstage(offstage: state.selectedDrawerTabOrder != index, child: icon.page.call()))
           .toList(),
     );
   }
@@ -165,8 +167,7 @@ class EHUserAvatar extends StatelessWidget {
               radius: 32,
               backgroundColor: UIConfig.loginAvatarBackGroundColor(context),
               foregroundImage: userSetting.avatarImgUrl.value != null ? ExtendedNetworkImageProvider(userSetting.avatarImgUrl.value!, cache: true) : null,
-              child:
-                  Icon(userSetting.hasLoggedIn() ? Icons.face_retouching_natural : Icons.face, color: UIConfig.loginAvatarForeGroundColor(context), size: 32),
+              child: Icon(userSetting.hasLoggedIn() ? Icons.face_retouching_natural : Icons.face, color: UIConfig.loginAvatarForeGroundColor(context), size: 32),
             ),
           ),
           title: Text(userSetting.nickName.value ?? userSetting.userName.value ?? 'tap2Login'.tr),
@@ -175,7 +176,7 @@ class EHUserAvatar extends StatelessWidget {
               toRoute(Routes.login);
               return;
             }
-            bool? result = await Get.dialog( EHDialog(title: '${'logout'.tr} ?'));
+            bool? result = await Get.dialog(EHDialog(title: '${'logout'.tr} ?'));
             if (result == true) {
               await ehRequest.requestLogout();
             }

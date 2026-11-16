@@ -160,7 +160,7 @@ class _ConfigSyncPageState extends State<ConfigSyncPage> {
 
     String? path;
     try {
-      path = await FilePicker.platform.getDirectoryPath();
+      path = await FilePicker.getDirectoryPath();
     } on Exception catch (e) {
       log.error('Pick download config path failed', e);
     }

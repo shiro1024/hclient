@@ -8,37 +8,40 @@ import 'package:jhentai/src/setting/archive_bot_setting.dart';
 import 'package:jhentai/src/widget/eh_archive_parse_source_select_dialog.dart';
 
 import '../../../../database/database.dart';
-import '../../../../model/gallery_image.dart';
-import '../../../../model/read_page_info.dart';
 import '../../../../routes/routes.dart';
 import '../../../../service/archive_download_service.dart';
+import '../../../../service/local_content_service.dart';
 import '../../../../service/read_progress_service.dart';
-import '../../../../service/super_resolution_service.dart';
 import '../../../../setting/read_setting.dart';
 import '../../../../setting/preference_setting.dart';
-import '../../../../setting/super_resolution_setting.dart';
-import '../../../../utils/process_util.dart';
 import '../../../../utils/route_util.dart';
-import '../../../../utils/toast_util.dart';
 import '../../../../utils/convert_util.dart';
 import '../../../../widget/eh_alert_dialog.dart';
 import '../../../../widget/eh_context_menu.dart';
 import '../../../../widget/eh_download_dialog.dart';
 import '../../../../widget/re_unlock_dialog.dart';
 import '../basic/multi_select/multi_select_download_page_logic_mixin.dart';
+import '../basic/webdav_actions.dart';
 import '../basic/multi_select/multi_select_download_page_state_mixin.dart';
 import 'archive_download_page_state_mixin.dart';
 
 mixin ArchiveDownloadPageLogicMixin on GetxController
-    implements Scroll2TopLogicMixin, MultiSelectDownloadPageLogicMixin<ArchiveDownloadedData>, UpdateGlobalGalleryStatusLogicMixin {
+    implements
+        Scroll2TopLogicMixin,
+        MultiSelectDownloadPageLogicMixin<ArchiveDownloadedData>,
+        UpdateGlobalGalleryStatusLogicMixin {
   final String bodyId = 'bodyId';
 
   ArchiveDownloadPageStateMixin get archiveDownloadPageState;
 
   @override
-  MultiSelectDownloadPageStateMixin get multiSelectDownloadPageState => archiveDownloadPageState;
+  MultiSelectDownloadPageStateMixin get multiSelectDownloadPageState =>
+      archiveDownloadPageState;
 
-  Future<bool> confirmDestructiveAction({required String title, String? content}) async {
+  Future<bool> confirmDestructiveAction({
+    required String title,
+    String? content,
+  }) async {
     if (!preferenceSetting.confirmDestructiveActions.isTrue) {
       return true;
     }
@@ -47,7 +50,8 @@ mixin ArchiveDownloadPageLogicMixin on GetxController
   }
 
   Future<void> handleChangeArchiveGroup(ArchiveDownloadedData archive) async {
-    String oldGroup = archiveDownloadService.archiveDownloadInfos[archive.gid]!.group;
+    String oldGroup =
+        archiveDownloadService.archiveDownloadInfos[archive.gid]!.group;
 
     ({String group, bool downloadOriginalImage})? result = await Get.dialog(
       EHDownloadDialog(
@@ -80,7 +84,11 @@ mixin ArchiveDownloadPageLogicMixin on GetxController
   }
 
   @override
-  void handleLongPressOrSecondaryTapItem(ArchiveDownloadedData item, BuildContext context, {Offset? position}) {
+  void handleLongPressOrSecondaryTapItem(
+    ArchiveDownloadedData item,
+    BuildContext context, {
+    Offset? position,
+  }) {
     if (multiSelectDownloadPageState.inMultiSelectMode) {
       toggleSelectItem(item.gid);
     } else {
@@ -89,7 +97,9 @@ mixin ArchiveDownloadPageLogicMixin on GetxController
   }
 
   Future<void> handleLongPressGroup(String groupName) {
-    if (archiveDownloadService.archiveDownloadInfos.values.every((a) => a.group != groupName)) {
+    if (archiveDownloadService.archiveDownloadInfos.values.every(
+      (a) => a.group != groupName,
+    )) {
       return handleDeleteGroup(groupName);
     }
     return handleRenameGroup(groupName);
@@ -141,85 +151,99 @@ mixin ArchiveDownloadPageLogicMixin on GetxController
   }
 
   void handleRemoveItem(ArchiveDownloadedData archive) {
-    archiveDownloadService.update([archiveDownloadService.galleryCountChangedId]);
+    archiveDownloadService.update([
+      archiveDownloadService.galleryCountChangedId,
+    ]);
   }
 
   Future<void> goToReadPage(ArchiveDownloadedData archive) async {
-    if (archiveDownloadService.archiveDownloadInfos[archive.gid]?.archiveStatus != ArchiveStatus.completed) {
+    if (archiveDownloadService
+            .archiveDownloadInfos[archive.gid]
+            ?.archiveStatus !=
+        ArchiveStatus.completed) {
       return;
     }
 
-    if (readSetting.useThirdPartyViewer.isTrue && readSetting.thirdPartyViewerPath.value != null) {
-      openThirdPartyViewer(archiveDownloadService.computeArchiveUnpackingPath(archive));
-    } else {
-      int readIndexRecord = await readProgressService.getReadProgress(archive.gid);
-
-      List<GalleryImage> images = await archiveDownloadService.getUnpackedImages(archive.gid);
-
-      ReadDirection? readDirection = isWebtoonGalleryFromTagString(archive.tags) ? ReadDirection.top2bottomList : null;
-
-      toRoute(
-        Routes.read,
-        arguments: ReadPageInfo(
-          mode: ReadMode.archive,
-          gid: archive.gid,
-          galleryTitle: archive.title,
-          galleryUrl: archive.galleryUrl,
-          initialIndex: readIndexRecord,
-          pageCount: images.length,
-          isOriginal: archive.isOriginal,
-          readProgressRecordStorageKey: archive.gid.toString(),
-          images: images,
-          useSuperResolution: superResolutionService.get(archive.gid, SuperResolutionType.archive) != null,
-          readDirection: readDirection,
-        ),
-      );
-    }
+    final copyId = await archiveDownloadService.ensureContentCopy(archive.gid);
+    if (copyId == null) return;
+    final info = await localContentService.readPageInfoForCopy(
+      copyId,
+      initialIndex: await readProgressService.getReadProgress(archive.gid),
+    );
+    info.readDirection = isWebtoonGalleryFromTagString(archive.tags)
+        ? ReadDirection.top2bottomList
+        : null;
+    toRoute(Routes.read, arguments: info);
   }
 
-  void showBottomSheet(ArchiveDownloadedData archive, BuildContext context, {Offset? position}) {
-    ArchiveDownloadInfo? archiveDownloadInfo = archiveDownloadService.archiveDownloadInfos[archive.gid];
+  Future<String?> _copyForCloud(int gid) async {
+    final archive = archiveDownloadService.archives.firstWhereOrNull(
+      (item) => item.gid == gid,
+    );
+    if (archive == null) return null;
+    final completed = await archiveDownloadService.ensureContentCopy(gid);
+    if (completed != null) return completed;
+    return localContentService.ensureCopy(
+      gid: gid,
+      representation: archive.isOriginal ? 'original' : 'resampled',
+      rootPath: archiveDownloadService.computeArchiveUnpackingPath(archive),
+      makeCurrent: false,
+    );
+  }
+
+  Future<void> handleCloudUpload(
+    ArchiveDownloadedData item, {
+    bool cleanup = false,
+  }) => queueCloudUploads([
+    () => _copyForCloud(item.gid),
+  ], cleanupAfterUpload: cleanup);
+
+  Future<void> handleMultiCloudUpload({bool cleanup = false}) async {
+    final gids = multiSelectDownloadPageState.selectedGids.toList();
+    await queueCloudUploads(
+      gids.map(
+        (gid) =>
+            () => _copyForCloud(gid),
+      ),
+      cleanupAfterUpload: cleanup,
+    );
+    exitSelectMode();
+  }
+
+  void showBottomSheet(
+    ArchiveDownloadedData archive,
+    BuildContext context, {
+    Offset? position,
+  }) {
+    ArchiveDownloadInfo? archiveDownloadInfo =
+        archiveDownloadService.archiveDownloadInfos[archive.gid];
 
     showEHContextMenu(
       context,
       position: position,
       actions: [
-        if (superResolutionSetting.modelDirectoryPath.value != null &&
-            (superResolutionService.get(archive.gid, SuperResolutionType.archive) == null ||
-                superResolutionService.get(archive.gid, SuperResolutionType.archive)?.status == SuperResolutionStatus.paused))
+        ...[
           EHContextMenuAction(
-            text: 'superResolution'.tr,
-            onTap: () async {
-              if (superResolutionService.get(archive.gid, SuperResolutionType.archive) == null && archive.isOriginal) {
-                bool? result = await Get.dialog(EHDialog(title: 'attention'.tr + '!', content: 'superResolveOriginalImageHint'.tr));
-                if (result != true) {
-                  return;
-                }
-              }
-
-              superResolutionService.superResolve(archive.gid, SuperResolutionType.archive);
-            },
+            text: 'cloudUpload'.tr,
+            onTap: () => handleCloudUpload(archive),
           ),
-        if (superResolutionService.get(archive.gid, SuperResolutionType.archive)?.status == SuperResolutionStatus.running)
           EHContextMenuAction(
-            text: 'stopSuperResolution'.tr,
-            onTap: () => superResolutionService.pauseSuperResolve(archive.gid, SuperResolutionType.archive).then((_) => toast("success".tr)),
+            text: 'cloudUploadAndClean'.tr,
+            onTap: () => handleCloudUpload(archive, cleanup: true),
           ),
-        if (superResolutionService.get(archive.gid, SuperResolutionType.archive)?.status == SuperResolutionStatus.paused ||
-            superResolutionService.get(archive.gid, SuperResolutionType.archive)?.status == SuperResolutionStatus.success)
-          EHContextMenuAction(
-            text: 'deleteSuperResolvedImage'.tr,
-            onTap: () => superResolutionService.deleteSuperResolve(archive.gid, SuperResolutionType.archive).then((_) => toast("success".tr)),
-          ),
+        ],
         if (archiveDownloadInfo != null &&
-            archiveDownloadInfo.archiveStatus.code < ArchiveStatus.downloaded.code &&
+            archiveDownloadInfo.archiveStatus.code <
+                ArchiveStatus.downloaded.code &&
             archiveDownloadInfo.parseSource == ArchiveParseSource.bot.code)
           EHContextMenuAction(
             text: 'changeParseSource2Official'.tr,
-            onTap: () => changeParseSource(archive.gid, ArchiveParseSource.official),
+            onTap: () =>
+                changeParseSource(archive.gid, ArchiveParseSource.official),
           ),
         if (archiveDownloadInfo != null &&
-            archiveDownloadInfo.archiveStatus.code < ArchiveStatus.downloaded.code &&
+            archiveDownloadInfo.archiveStatus.code <
+                ArchiveStatus.downloaded.code &&
             archiveBotSetting.isReady &&
             archiveDownloadInfo.parseSource == ArchiveParseSource.official.code)
           EHContextMenuAction(
@@ -243,7 +267,11 @@ mixin ArchiveDownloadPageLogicMixin on GetxController
     bool? ok = await Get.dialog(const ReUnlockDialog());
     if (ok ?? false) {
       await archiveDownloadService.cancelArchive(archive.gid);
-      await archiveDownloadService.downloadArchive(archive, resume: true, reParse: true);
+      await archiveDownloadService.downloadArchive(
+        archive,
+        resume: true,
+        reParse: true,
+      );
     }
   }
 
@@ -306,7 +334,9 @@ mixin ArchiveDownloadPageLogicMixin on GetxController
   }
 
   Future<void> handleChangeParseSource() async {
-    ArchiveParseSource? result = await Get.dialog(const EHArchiveParseSourceSelectDialog());
+    ArchiveParseSource? result = await Get.dialog(
+      const EHArchiveParseSourceSelectDialog(),
+    );
 
     if (result == null) {
       return;
@@ -321,7 +351,10 @@ mixin ArchiveDownloadPageLogicMixin on GetxController
     updateSafely([bottomAppbarId, bodyId]);
   }
 
-  Future<void> changeParseSource(int gid, ArchiveParseSource parseSource) async {
+  Future<void> changeParseSource(
+    int gid,
+    ArchiveParseSource parseSource,
+  ) async {
     return archiveDownloadService.changeParseSource(gid, parseSource);
   }
 }

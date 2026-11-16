@@ -1,4 +1,3 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -11,7 +10,6 @@ import 'package:jhentai/src/setting/read_setting.dart';
 import 'package:jhentai/src/setting/style_setting.dart';
 
 import '../../../routes/routes.dart';
-import '../../../service/log.dart';
 import '../../../utils/route_util.dart';
 import '../../../utils/text_input_formatter.dart';
 import '../../../utils/toast_util.dart';
@@ -51,8 +49,6 @@ class SettingReadPage extends StatelessWidget {
                   _buildTapZoneStyle(context).center(),
                   _buildEnableImageMaxKilobytes().center(),
                   if (readSetting.enableMaxImageKilobyte.isTrue) _buildImageMaxKilobytes(context).fadeIn(const Key('imageMaxKilobytes')).center(),
-                  if (GetPlatform.isDesktop) _buildUseThirdPartyViewer().center(),
-                  if (GetPlatform.isDesktop) _buildThirdPartyViewerPath().center(),
                   if (GetPlatform.isDesktop) _buildKeyboardShortcuts(context).center(),
                   if (GetPlatform.isMobile) _buildDeviceDirection().center(),
                   if (GetPlatform.isMobile) _buildEnableOrientationSpecificReadDirection().center(),
@@ -521,37 +517,6 @@ class SettingReadPage extends StatelessWidget {
     }
     readSetting.saveLandscapeImageRegionWidthRatio(value);
     toast('saveSuccess'.tr);
-  }
-
-  Widget _buildUseThirdPartyViewer() {
-    return SwitchListTile(
-      title: Text('useThirdPartyViewer'.tr),
-      value: readSetting.useThirdPartyViewer.value,
-      onChanged: readSetting.saveUseThirdPartyViewer,
-    );
-  }
-
-  Widget _buildThirdPartyViewerPath() {
-    return ListTile(
-      title: Text('thirdPartyViewerPath'.tr),
-      subtitle: Text(readSetting.thirdPartyViewerPath.value ?? ''),
-      trailing: const Icon(Icons.keyboard_arrow_right),
-      onTap: () async {
-        FilePickerResult? result;
-        try {
-          result = await FilePicker.platform.pickFiles();
-        } on Exception catch (e) {
-          log.error('Pick 3-rd party viewer failed', e);
-          log.uploadError(e);
-        }
-
-        if (result == null || result.files.single.path == null) {
-          return;
-        }
-
-        readSetting.saveThirdPartyViewerPath(result.files.single.path!);
-      },
-    );
   }
 
   Widget _buildKeyboardShortcuts(BuildContext context) {

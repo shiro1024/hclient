@@ -30,16 +30,7 @@ class _ContextMenuRegionState extends State<ContextMenuRegion> {
   final ContextMenuController _contextMenuController = ContextMenuController();
 
   static bool get _longPressEnabled {
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-      case TargetPlatform.iOS:
-        return true;
-      case TargetPlatform.macOS:
-      case TargetPlatform.fuchsia:
-      case TargetPlatform.linux:
-      case TargetPlatform.windows:
-        return false;
-    }
+    return defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS;
   }
 
   void _onSecondaryTapUp(TapUpDetails details) {

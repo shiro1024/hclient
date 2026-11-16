@@ -16,7 +16,11 @@ import '../../mixin/basic/multi_select/multi_select_download_page_logic_mixin.da
 import 'archive_list_download_page_state.dart';
 
 class ArchiveListDownloadPageLogic extends GetxController
-    with Scroll2TopLogicMixin, MultiSelectDownloadPageLogicMixin<ArchiveDownloadedData>, ArchiveDownloadPageLogicMixin, UpdateGlobalGalleryStatusLogicMixin {
+    with
+        Scroll2TopLogicMixin,
+        MultiSelectDownloadPageLogicMixin<ArchiveDownloadedData>,
+        ArchiveDownloadPageLogicMixin,
+        UpdateGlobalGalleryStatusLogicMixin {
   final String galleryId = 'galleryId';
 
   ArchiveListDownloadPageState state = ArchiveListDownloadPageState();

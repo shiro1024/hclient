@@ -1,5 +1,7 @@
 import 'package:drift/drift.dart';
 
+import 'content_copy.dart';
+
 @TableIndex(name: 'g_idx_insert_time', columns: {#insertTime})
 @TableIndex(name: 'g_idx_sort_order', columns: {#sortOrder})
 @TableIndex(name: 'g_idx_group_name', columns: {#groupName})
@@ -9,6 +11,8 @@ class GalleryDownloaded extends Table {
   String? get tableName => 'gallery_downloaded_v2';
 
   IntColumn get gid => integer()();
+
+  TextColumn get copyId => text().nullable().references(ContentCopy, #copyId)();
 
   TextColumn get token => text()();
 
@@ -46,44 +50,6 @@ class GalleryDownloaded extends Table {
   /// Computed once when the download task is first created and stored here to
   /// ensure the path never changes even if the truncation algorithm is updated.
   TextColumn get sanitizedTitle => text().nullable()();
-
-  @override
-  Set<Column<Object>>? get primaryKey => {gid};
-}
-
-class GalleryDownloadedOld extends Table {
-  @override
-  String? get tableName => 'gallery_downloaded';
-
-  IntColumn get gid => integer()();
-
-  TextColumn get token => text()();
-
-  TextColumn get title => text()();
-
-  TextColumn get category => text()();
-
-  IntColumn get pageCount => integer().named('pageCount')();
-
-  TextColumn get galleryUrl => text().named('galleryUrl')();
-
-  TextColumn get oldVersionGalleryUrl => text().named('oldVersionGalleryUrl').nullable()();
-
-  TextColumn get uploader => text().nullable()();
-
-  TextColumn get publishTime => text().named('publishTime')();
-
-  IntColumn get downloadStatusIndex => integer().named('downloadStatusIndex')();
-
-  TextColumn get insertTime => text().named('insertTime').nullable()();
-
-  BoolColumn get downloadOriginalImage => boolean().named('downloadOriginalImage').withDefault(const Constant(false))();
-
-  IntColumn get priority => integer().nullable()();
-
-  IntColumn get sortOrder => integer().named('sortOrder').withDefault(const Constant(0))();
-
-  TextColumn get groupName => text().named('groupName').nullable()();
 
   @override
   Set<Column<Object>>? get primaryKey => {gid};

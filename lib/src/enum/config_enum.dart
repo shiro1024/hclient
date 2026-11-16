@@ -1,10 +1,6 @@
 enum ConfigEnum {
-  /// app update
+  /// first launch
   firstOpenInited('firstOpenInited'),
-  renameDownloadMetadata('renameDownloadMetadata'),
-  migrateGalleryHistory('migrateGalleryHistory'),
-  migrateStorageConfig('migrateStorageConfig'),
-  renameGallerysPageLogicKey('renameGallerysPageLogicKey'),
   tapZoneGuideShown('tapZoneGuideShown'),
 
   /// settings
@@ -20,10 +16,10 @@ enum ConfigEnum {
   securitySetting('securitySetting'),
   siteSetting('siteSetting'),
   styleSetting('styleSetting'),
-  superResolutionSetting('SuperResolutionSetting'),
   userSetting('userSetting'),
   archiveBotSetting('archiveBotSetting'),
   keyboardShortcutSetting('keyboardShortcutSetting'),
+  webdavSetting('webdavSetting'),
   downloadSearchPageType('downloadSearchPageType'),
   windowFullScreen('windowFullScreen'),
   windowMaximize('windowMaximize'),
@@ -35,12 +31,9 @@ enum ConfigEnum {
   /// config
   ehCookie('eh_cookies'),
   searchConfig('searchConfig'),
-  dismissVersion('dismissVersion'),
   readIndexRecord('readIndexRecord'),
   quickSearch('quickSearch'),
-  oldGalleryHistory('history'),
   searchHistory('searchHistory'),
-  myTagsSetting('MyTagsSetting'),
   builtInBlockedUser('builtInBlockedUser'),
 
   /// page config
@@ -51,13 +44,14 @@ enum ConfigEnum {
   tagTranslationServiceLoadingState('TagTranslationServiceLoadingState'),
   tagTranslationServiceTimestamp('TagTranslationServiceTimestamp'),
   tagSearchOrderOptimizationServiceVersion('TagTranslationServiceVersion'),
-  tagSearchOrderOptimizationServiceLoadingState('TagSearchOrderOptimizationServiceLoadingState'),
+  tagSearchOrderOptimizationServiceLoadingState(
+    'TagSearchOrderOptimizationServiceLoadingState',
+  ),
   displayBlockingRulesGroup('displayBlockingRulesGroup'),
 
   /// cache
   isSpreadPage('isSpreadPage'),
-  galleryImageHash('galleryImageHash'),
-  ;
+  galleryImageHash('galleryImageHash');
 
   final String key;
 

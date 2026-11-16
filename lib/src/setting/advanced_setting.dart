@@ -12,7 +12,6 @@ AdvancedSetting advancedSetting = AdvancedSetting();
 class AdvancedSetting with JHLifeCircleBeanWithConfigStorage implements JHLifeCircleBean {
   RxBool enableLogging = true.obs;
   RxBool enableVerboseLogging = kDebugMode.obs;
-  RxBool enableCheckUpdate = true.obs;
   RxBool enableCheckClipboard = true.obs;
   RxBool inNoImageMode = false.obs;
 
@@ -25,7 +24,6 @@ class AdvancedSetting with JHLifeCircleBeanWithConfigStorage implements JHLifeCi
 
     enableLogging.value = map['enableLogging'];
     enableVerboseLogging.value = map['enableVerboseLogging'] ?? enableVerboseLogging.value;
-    enableCheckUpdate.value = map['enableCheckUpdate'] ?? enableCheckUpdate.value;
     enableCheckClipboard.value = map['enableCheckClipboard'] ?? enableCheckClipboard.value;
     inNoImageMode.value = map['inNoImageMode'] ?? inNoImageMode.value;
   }
@@ -35,7 +33,6 @@ class AdvancedSetting with JHLifeCircleBeanWithConfigStorage implements JHLifeCi
     return jsonEncode({
       'enableLogging': enableLogging.value,
       'enableVerboseLogging': enableVerboseLogging.value,
-      'enableCheckUpdate': enableCheckUpdate.value,
       'enableCheckClipboard': enableCheckClipboard.value,
       'inNoImageMode': inNoImageMode.value,
     });
@@ -56,12 +53,6 @@ class AdvancedSetting with JHLifeCircleBeanWithConfigStorage implements JHLifeCi
   Future<void> saveEnableVerboseLogging(bool enableVerboseLogging) async {
     log.debug('saveEnableVerboseLogging:$enableVerboseLogging');
     this.enableVerboseLogging.value = enableVerboseLogging;
-    await saveBeanConfig();
-  }
-
-  Future<void> saveEnableCheckUpdate(bool enableCheckUpdate) async {
-    log.debug('saveEnableCheckUpdate:$enableCheckUpdate');
-    this.enableCheckUpdate.value = enableCheckUpdate;
     await saveBeanConfig();
   }
 

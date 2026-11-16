@@ -16,7 +16,9 @@ import 'log.dart';
 
 CloudConfigService cloudConfigService = CloudConfigService();
 
-class CloudConfigService with JHLifeCircleBeanErrorCatch implements JHLifeCircleBean {
+class CloudConfigService
+    with JHLifeCircleBeanErrorCatch
+    implements JHLifeCircleBean {
   static Map<CloudConfigTypeEnum, String> configTypeVersionMap = {
     CloudConfigTypeEnum.readIndexRecord: '1.0.0',
     CloudConfigTypeEnum.quickSearch: '1.0.0',
@@ -41,7 +43,8 @@ class CloudConfigService with JHLifeCircleBeanErrorCatch implements JHLifeCircle
     switch (config.type) {
       case CloudConfigTypeEnum.readIndexRecord:
         List list = await isolateService.jsonDecodeAsync(config.config);
-        List<LocalConfig> readIndexRecords = list.map((e) => LocalConfig.fromJson(e)).toList();
+        List<LocalConfig> readIndexRecords =
+            list.map((e) => LocalConfig.fromJson(e)).toList();
         await localConfigService.batchWrite(readIndexRecords
             .map((e) => LocalConfigCompanion(
                   configKey: Value(e.configKey.key),
@@ -52,32 +55,40 @@ class CloudConfigService with JHLifeCircleBeanErrorCatch implements JHLifeCircle
             .toList());
         break;
       case CloudConfigTypeEnum.quickSearch:
-        await localConfigService.write(configKey: ConfigEnum.quickSearch, value: config.config);
+        await localConfigService.write(
+            configKey: ConfigEnum.quickSearch, value: config.config);
         await quickSearchService.refreshBean();
         break;
       case CloudConfigTypeEnum.searchHistory:
-        await localConfigService.write(configKey: ConfigEnum.searchHistory, value: config.config);
+        await localConfigService.write(
+            configKey: ConfigEnum.searchHistory, value: config.config);
         await searchHistoryService.refreshBean();
         break;
       case CloudConfigTypeEnum.blockRules:
         List list = await isolateService.jsonDecodeAsync(config.config);
-        List<LocalBlockRule> blockRules = list.map((e) => LocalBlockRule.fromJson(e)).toList();
+        List<LocalBlockRule> blockRules =
+            list.map((e) => LocalBlockRule.fromJson(e)).toList();
 
         for (LocalBlockRule blockRule in blockRules) {
           blockRule.id = null;
         }
-        
-        blockRules.groupListsBy((element) => element.groupId!).forEach((groupId, rules) async {
+
+        for (final entry
+            in blockRules.groupListsBy((element) => element.groupId!).entries) {
+          final groupId = entry.key;
+          final rules = entry.value;
           bool exists = await localBlockRuleService.existsGroup(groupId);
           if (!exists) {
-            await localBlockRuleService.replaceBlockRulesByGroup(groupId, rules);
+            await localBlockRuleService.replaceBlockRulesByGroup(
+                groupId, rules);
           }
-        });
+        }
 
         break;
       case CloudConfigTypeEnum.history:
         List list = await isolateService.jsonDecodeAsync(config.config);
-        List<GalleryHistoryV2Data> histories = list.map((e) => GalleryHistoryV2Data.fromJson(e)).toList();
+        List<GalleryHistoryV2Data> histories =
+            list.map((e) => GalleryHistoryV2Data.fromJson(e)).toList();
         await historyService.batchRecord(histories);
         break;
     }
@@ -87,32 +98,37 @@ class CloudConfigService with JHLifeCircleBeanErrorCatch implements JHLifeCircle
     String configValue;
     switch (type) {
       case CloudConfigTypeEnum.readIndexRecord:
-        List<LocalConfig> readIndexRecords = await localConfigService.readWithAllSubKeys(configKey: ConfigEnum.readIndexRecord);
+        List<LocalConfig> readIndexRecords = await localConfigService
+            .readWithAllSubKeys(configKey: ConfigEnum.readIndexRecord);
         if (readIndexRecords.isEmpty) {
           return null;
         }
         configValue = await isolateService.jsonEncodeAsync(readIndexRecords);
         break;
       case CloudConfigTypeEnum.quickSearch:
-        String? quickSearches = await localConfigService.read(configKey: ConfigEnum.quickSearch);
+        String? quickSearches =
+            await localConfigService.read(configKey: ConfigEnum.quickSearch);
         if (quickSearches == null) {
           return null;
         }
         configValue = quickSearches;
         break;
       case CloudConfigTypeEnum.searchHistory:
-        String? searchHistories = await localConfigService.read(configKey: ConfigEnum.searchHistory);
+        String? searchHistories =
+            await localConfigService.read(configKey: ConfigEnum.searchHistory);
         if (searchHistories == null) {
           return null;
         }
         configValue = searchHistories;
         break;
       case CloudConfigTypeEnum.blockRules:
-        List<LocalBlockRule> blockRules = await localBlockRuleService.getBlockRules();
+        List<LocalBlockRule> blockRules =
+            await localBlockRuleService.getBlockRules();
         configValue = await isolateService.jsonEncodeAsync(blockRules);
         break;
       case CloudConfigTypeEnum.history:
-        List<GalleryHistoryV2Data> histories = await historyService.getLatest10000RawHistory();
+        List<GalleryHistoryV2Data> histories =
+            await historyService.getLatest10000RawHistory();
         configValue = await isolateService.jsonEncodeAsync(histories);
         break;
     }

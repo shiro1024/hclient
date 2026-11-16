@@ -3,6 +3,9 @@ import 'dart:core';
 class en_US {
   static Map<String, String> keys() {
     return {
+      'readingImageSourceSize': 'Original @size',
+      'readingImageStoredSize': 'Disk @size',
+
       /// common
       'yes': 'Yes',
       'no': 'No',
@@ -54,13 +57,6 @@ class en_US {
       /// start page
       'TapAgainToExit': 'Tap again to exit',
 
-      /// update dialog
-      'availableUpdate': 'Available Update!',
-      'LatestVersion': 'Latest Ver',
-      'CurrentVersion': 'Current Ver',
-      'check': 'Check',
-      'dismiss': 'Dismiss',
-
       /// login page
       'login': 'Login',
       'notLoggedIn': 'Login',
@@ -77,7 +73,8 @@ class en_US {
       'skipVerification': 'Skip Verification',
       'assist': 'Assist',
       'onlineVerificationHint': 'Validate via HTTP request',
-      'webviewVerificationHint': 'Validate via WebView (use when online verification fails)',
+      'webviewVerificationHint':
+          'Validate via WebView (use when online verification fails)',
       'skipVerificationHint': 'Save directly without verification',
       'igneousFieldHint': 'Only required for EX site; EH site can leave blank',
       'clipboardCookieDetected': 'Clipboard cookie detected and filled in',
@@ -105,7 +102,8 @@ class en_US {
 
       /// request
       'sadPanda': 'Sad Panda(no data). Refer: https://github.com/jiangtian616/JHenTai/wiki/Common-Questions',
-      'sadPandaReferLink': 'https://github.com/jiangtian616/JHenTai/wiki/Common-Questions',
+      'sadPandaReferLink':
+          'https://github.com/jiangtian616/JHenTai/wiki/Common-Questions',
 
       /// gallery card
       'filtered': 'Filtered',
@@ -147,7 +145,8 @@ class en_US {
       'cloudflare403': 'You have been restricted by Cloudflare from making network requests. Please try switching networks or using another login method.',
       'invisible2User': 'This Gallery is invisible to You',
       'invisibleHints': 'This gallery is removed or unavailable.',
-      'copyRightHints': 'This gallery is unavailable due to a copyright claim by: ',
+      'copyRightHints':
+          'This gallery is unavailable due to a copyright claim by: ',
       'refreshGalleryDetailsFailed': 'Refresh Gallery Details Failed',
       'failToGetThumbnails': "Fail To Get Thumbnails",
       'favoriteGallerySuccess': "Favorite Gallery Success",
@@ -155,7 +154,8 @@ class en_US {
       'removeFavoriteSuccess': "Remove Favorite Success",
       'removeFavoriteFailed': "Remove Favorite Failed",
       'getGalleryFavoriteInfoFailed': 'Get gallery favorite info failed',
-      'favoriteNoteSlotFullHint': 'Favorite note slot is full, please delete some notes first',
+      'favoriteNoteSlotFullHint':
+          'Favorite note slot is full, please delete some notes first',
       'ratingSuccess': 'Rating Success',
       'ratingFailed': 'Rating Failed',
       'voteTagFailed': 'Vote Tag Failed',
@@ -165,10 +165,12 @@ class en_US {
       'addNewTagSetSuccess': 'Add New Tag Set Success',
       'addNewWatchedTagSetSuccess': 'Add New Watched Tag Set Success',
       'addNewHiddenTagSetSuccess': 'Add New Hidden Tag Set Success',
-      'addNewTagSetSuccessHint': 'You can check your tags at Setting->EH->My Tags',
+      'addNewTagSetSuccessHint':
+          'You can check your tags at Setting->EH->My Tags',
       'addNewTagSetFailed': 'Add New Tag Set Failed',
       'VisitorStatistics': 'Visitor Statistics',
-      'invisible2UserWithoutDonation': 'This gallery\'s stats is invisible to user without donation',
+      'invisible2UserWithoutDonation':
+          'This gallery\'s stats is invisible to user without donation',
       'getGalleryStatisticsFailed': 'Get Gallery Statistics Failed',
       'totalVisits': 'Total Visits',
       'visits': 'Visits',
@@ -182,7 +184,8 @@ class en_US {
       'original': 'Original',
       'resample': 'Resample',
       'beginToDownloadArchive': 'Begin to Download Archive',
-      'beginToDownloadArchiveHint': 'You can check progress at Download -> Archive',
+      'beginToDownloadArchiveHint':
+          'You can check progress at Download -> Archive',
       'updateGalleryError': 'Update Gallery Error',
       'thisGalleryHasANewVersion': 'This gallery has a new version',
       'hasUpdated': 'Has updated',
@@ -191,10 +194,11 @@ class en_US {
       'hasDownloaded': 'Has downloaded',
       '410Hints': 'You have clocked too many downloaded bytes on this archive, and need to re-unlock of this archive to resume.',
       '429Hints': 'Too many download requests! You\'d better decrease your archive download concurrency.',
-      'getUnpackedImagesFailedMsg': 'JHenTai can\'t load images of this archive, please check your local file.',
+      'getUnpackedImagesFailedMsg': 'hClient can\'t load images of this archive, please check your local file.',
       'getGalleryTorrentsFailed': 'Get torrents failed',
       'chooseArchive': 'Choose Archive',
-      'tagSetExceedLimit': 'No more tags can be added because you have reach the limit',
+      'tagSetExceedLimit':
+          'No more tags can be added because you have reach the limit',
       'useTranslation': 'Use Translation',
       'addTagSuccess': 'Add Tag Success',
       'addTagFailed': 'Add Tag Failed',
@@ -203,7 +207,8 @@ class en_US {
       'blockTitleLocally': 'Block selected title locally',
       'blockRuleAlreadyExists': 'This rule already exists',
       'blockThisGallery': 'Block this gallery',
-      'blockGallerySuccess': 'Gallery blocked. You can modify it in Preference - Block Rules',
+      'blockGallerySuccess':
+          'Gallery blocked. You can modify it in Preference - Block Rules',
 
       /// detail dialog
       'galleryUrl': 'Gallery Url',
@@ -224,7 +229,7 @@ class en_US {
       'voteCommentFailedHint': 'Try to pull-down to refresh details page first',
       'unknownUser': 'Unknown User',
       'atLeast3Characters': 'At least 3 characters',
-      'noJHenTaiHints': 'Please don\'t mention JHenTai, thanks',
+      'noJHenTaiHints': 'Please do not mention the app name, thanks',
       'blockUser': 'Block user',
 
       /// EHImage
@@ -238,8 +243,9 @@ class en_US {
       'loading': "Loading",
       'paused': 'Paused',
       'exceedImageLimits': "Exceed Image Limits",
-      'ehServerError': 'An error occurred due to EH\'s server, please try again later',
-      'unsupportedImagePageStyle': "JHenTai doesn't support Multi-Page Viewer(MPV), please change to default style in e-hentai.org",
+      'ehServerError':
+          'An error occurred due to EH\'s server, please try again later',
+      'unsupportedImagePageStyle': "hClient doesn't support Multi-Page Viewer(MPV), please change to default style in e-hentai.org",
       'toNext': 'To next',
       'toPrev': 'To prev',
       'back': 'Back',
@@ -260,14 +266,14 @@ class en_US {
       'advanced': 'Advanced',
       'cloud': 'Cloud',
       'security': 'Security',
-      'about': 'About',
       'accountSetting': 'Account Setting',
       'styleSetting': 'Style Setting',
       'advancedSetting': 'Advanced Setting',
       'refreshRate': 'Refresh Rate',
       'refreshRateCurrent': 'Current',
       'refreshRateHint': 'Applies immediately. May not take effect due to system restrictions.',
-      'refreshRateSecurityHint': 'Only change if necessary. If issues occur, reset the app data.',
+      'refreshRateSecurityHint':
+          'Only change if necessary. If issues occur, reset the app data.',
       'securitySetting': 'Security Setting',
       'ehSetting': 'EH Site Setting',
       'readSetting': 'Read Setting',
@@ -284,7 +290,7 @@ class en_US {
       'redirectAllGallery': 'Redirect all gallery to EH',
       'imDonorHint': 'If you are a donor, you can turn this on to help you access galleries in EX site',
       'profileSetting': 'Profile Setting',
-      'chooseProfileHint': 'Choose profile used in JHenTai',
+      'chooseProfileHint': 'Choose profile used in hClient',
       'siteSetting': 'Site Setting',
       'siteSettingHint': 'Edit site setting in e-hentai',
       'showCookie': 'Cookie',
@@ -327,7 +333,8 @@ class en_US {
       /// Layout
       'layoutMode': 'Layout Mode',
       'layoutFollowOrientation': 'Layout follows orientation',
-      'layoutFollowOrientationHint': 'Use different layouts in portrait and landscape',
+      'layoutFollowOrientationHint':
+          'Use different layouts in portrait and landscape',
       'portraitLayout': 'Portrait layout',
       'landscapeLayout': 'Landscape layout',
       'mobileLayoutV2Name': 'Mobile',
@@ -345,8 +352,10 @@ class en_US {
       'enableTagZHTranslation': 'Translate Tag Name into Chinese',
       'version': 'Version',
       'downloadTagTranslationHint': 'Downloading data..., downloaded: ',
-      'zhTagSearchOrderOptimization': 'Chinese Tag Auto-Completion Ordering Rule',
-      'zhTagSearchOrderOptimizationHint': 'Intelligent sorting by default and sort by frequency if enabled',
+      'zhTagSearchOrderOptimization':
+          'Chinese Tag Auto-Completion Ordering Rule',
+      'zhTagSearchOrderOptimizationHint':
+          'Intelligent sorting by default and sort by frequency if enabled',
       'themeMode': 'Theme Mode',
       'dark': 'Dark',
       'light': 'Light',
@@ -362,8 +371,10 @@ class en_US {
       'waterfallFlowBig': 'Waterfall Flow (Big)',
       'crossAxisCountInWaterFallFlow': 'Waterfall Flow Column Count',
       'pageListStyle': 'Gallery List Style (Page)',
-      'crossAxisCountInGridDownloadPageForGroup': 'Download Page Grid Column Count(Group)',
-      'crossAxisCountInGridDownloadPageForGallery': 'Download Page Grid Column Count(Gallery)',
+      'crossAxisCountInGridDownloadPageForGroup':
+          'Download Page Grid Column Count(Group)',
+      'crossAxisCountInGridDownloadPageForGallery':
+          'Download Page Grid Column Count(Gallery)',
       'crossAxisCountInDetailPage': 'Detail Page Thumbnail Column Count',
       'global': 'Global',
       'auto': 'Auto',
@@ -382,7 +393,6 @@ class en_US {
       'enableSwipeBackGesture': 'Enable Swipe Back Gesture',
       'enableLeftMenuDrawerGesture': 'Enable Left Menu Drawer Gesture',
       'enableQuickSearchDrawerGesture': 'Enable QuickSearch Drawer Gesture',
-      'drawerGestureEdgeWidth': 'Drawer Gesture Edge Width',
       'alwaysShowScroll2TopButton': 'Always Show Scroll to Top Button',
       'enableDefaultFavorite': 'Enable Default Favorite',
       'enableDefaultFavoriteHint': 'Long press to re-select',
@@ -400,9 +410,11 @@ class en_US {
       'none': 'None',
       'noneHint': 'Use default search options for next search',
       'showAllGalleryTitles': 'Show All Gallery Titles',
-      'showAllGalleryTitlesHint': 'Show both original and japanese titles if available',
+      'showAllGalleryTitlesHint':
+          'Show both original and japanese titles if available',
       'showGalleryTagVoteStatus': 'Show Gallery Tag Vote Status',
-      'showGalleryTagVoteStatusHint': 'Include confidence, skepticism and incorrect',
+      'showGalleryTagVoteStatusHint':
+          'Include confidence, skepticism and incorrect',
       'showComments': 'Show Comments',
       'showCommentsHint': 'When disabled, comments are hidden in details page, but you can still tap All Comments to view them',
       'showAllComments': 'Show All Comments',
@@ -411,13 +423,15 @@ class en_US {
       'addTagHint': 'Enter new tags, separated with comma',
 
       /// theme color setting page
-      'themeColorSettingHint': 'Assign different color for light and dark theme',
+      'themeColorSettingHint':
+          'Assign different color for light and dark theme',
       'preview': 'Preview',
       'preset': 'Preset',
       'custom': 'Custom',
 
       /// performance setting page
-      'maxGalleryNum4Animation': 'Max Gallery Num For List Animation in Download page',
+      'maxGalleryNum4Animation':
+          'Max Gallery Num For List Animation in Download page',
       'maxGalleryNum4AnimationHint': 'Disable animation for groups which have more galleries than this value(for list style)',
 
       /// mouse wheel setting page
@@ -430,7 +444,8 @@ class en_US {
       'hostMapping': 'Host Mapping',
       'hostMappingHint': 'Used for domain fronting',
       'proxyAddress': 'Proxy Address',
-      'proxyAddressHint': 'If you use proxy server, make sure to set it up correctly',
+      'proxyAddressHint':
+          'If you use proxy server, make sure to set it up correctly',
       'saveSuccess': 'Save success',
       'saveFailed': 'Save failed',
       'updateSuccess': 'Update success',
@@ -439,7 +454,8 @@ class en_US {
       'pageCacheMaxAge': 'Page Cache Expiration Time',
       'pageCacheMaxAgeHint': 'You can update cache by refresh page',
       'cacheImageExpireDuration': 'Image Cache Expiration Time',
-      'cacheImageExpireDurationHint': 'Remove image cache automatically after launching app',
+      'cacheImageExpireDurationHint':
+          'Remove image cache automatically after launching app',
       'oneMinute': '1 Minute',
       'tenMinute': '10 Minute',
       'oneHour': '1 Hour',
@@ -451,16 +467,11 @@ class en_US {
       'clearLogs': 'Clear Logs',
       'clearImagesCache': 'Clear Images Cache',
       'longPress2Clear': 'Long press to clear',
-      'checkUpdateAfterLaunchingApp': 'Check update after launching app',
       'checkClipboard': 'Check Gallery URL in Clipboard',
       'clearPageCache': 'Clear Page Cache',
       'clearSuccess': 'Clear Success',
-      'superResolution': 'Image Super Resolution',
-      'stopSuperResolution': 'Stop Super Resolution',
-      'deleteSuperResolvedImage': 'Delete Super Resolved Image',
-      'superResolveOriginalImageHint': 'Process original image cost more time, space and performance, are you sure to continue?',
       'verityAppLinks4Android12': 'Verity App Links(Android 12+)',
-      'verityAppLinks4Android12Hint': 'For Android 12+, you need to manually add link to verified links in order to open JHenTai in 3-rd apps',
+      'verityAppLinks4Android12Hint': 'For Android 12+, you need to manually add link to verified links in order to open hClient in 3-rd apps',
       'noImageMode': 'No Image Mode',
       'exportData': 'Export Data',
       'exportDataHint': 'Export configs, block rules and history',
@@ -469,7 +480,8 @@ class en_US {
       'importDataHint': 'App will shutdown automatically after importing to apply the latest configuration',
 
       /// host mapping page
-      'hostDataSource': 'No need to change by default.\nData source: https://dns.google/',
+      'hostDataSource':
+          'No need to change by default.\nData source: https://dns.google/',
 
       /// proxy page
       'proxySetting': 'Proxy Setting',
@@ -501,7 +513,8 @@ class en_US {
       'landscape': 'Landscape',
       'portrait': 'Portrait',
       'readDirection': 'Read Direction',
-      'enableOrientationSpecificReadDirection': 'Orientation-Specific Read Direction',
+      'enableOrientationSpecificReadDirection':
+          'Orientation-Specific Read Direction',
       'enableOrientationSpecificReadDirectionHint': 'Set different read directions for portrait and landscape orientations',
       'autoDetectWebtoon': 'Auto-detect Webtoon',
       'autoDetectWebtoonHint': 'Automatically use top-to-bottom continuous reading mode for galleries tagged with webtoon',
@@ -534,8 +547,6 @@ class en_US {
       'tapZoneBottomRowRatio': 'Bottom Row Height',
       'tapZonePreview': 'Preview',
       'tapZoneGuideHint': 'Tap anywhere to dismiss. Zones can be configured in Settings - Read.',
-      'useThirdPartyViewer': 'Use Custom Viewer',
-      'thirdPartyViewerPath': 'Custom Viewer Path(Executable file)',
       'showThumbnails': 'Show Thumbnails',
       'showScrollBar': 'Show Scroll Bar',
       'showStatusInfo': 'Show Status at Bottom',
@@ -563,7 +574,8 @@ class en_US {
       'turnPageModeHint': 'To next screen or next image',
       'enableImageMaxKilobytes': 'Enable Image Compression',
       'imageMaxKilobytes': 'Image Max Size',
-      'imageMaxKilobytesHint': 'Images larger than this size will be compressed',
+      'imageMaxKilobytesHint':
+          'Images larger than this size will be compressed',
       'image': 'Image',
       'screen': 'Screen',
       'preloadDistanceInOnlineMode': 'Preload Distance(Online)',
@@ -607,11 +619,7 @@ class en_US {
       /// log page
       'logList': 'Log List',
 
-      /// super resolution setting page
-      'downloadSuperResolutionModelHint': 'Download Model From Github',
-      'modelDirectoryPath': 'Model Directory Path',
       'upSamplingScale': 'Up Sampling Scale',
-      'modelType': 'Choose Model',
       'x4plusHint': 'Take up more space but faster at most time',
       'x4plusAnimeHint': 'Take up less space but slower at most time',
       'enable4OnlineReading': 'Process Automatically While Reading Online',
@@ -637,8 +645,8 @@ class en_US {
       'reUnlock': 'Re-Unlock',
       'reUnlockHint': 'Attention! Re-unlock need to buy this archive again.',
       'downloadHelpInfo': 'If you can\'t download and find errors like table doesn\'t exist in logs, please uninstall current app and re-install.',
-      'localGalleryHelpInfo': 'Load galleries which is not downloaded by JHenTai. Add config in Download Setting -> Extra Gallery Scan Path and then refresh.',
-      'localGalleryHelpInfo4iOSAndMacOS': 'Load galleries which is not downloaded by JHenTai. Put your galleries in default download path and then refresh',
+      'localGalleryHelpInfo': 'Load galleries which is not downloaded by hClient. Add config in Download Setting -> Extra Gallery Scan Path and then refresh.',
+      'localGalleryHelpInfo4iOSAndMacOS': 'Load galleries which is not downloaded by hClient. Put your galleries in default download path and then refresh',
       'deleteLocalGalleryHint': 'Delete your local files',
       'priority': 'Priority',
       'highest': 'Highest',
@@ -663,9 +671,11 @@ class en_US {
       'operationInProgress': 'The operation is in progress',
       'startProcess': 'Start Process',
       'multiReDownloadHint': 'You will re-download all selected galleries.',
-      'multiChangeGroupHint': 'You will change group of all selected galleries.',
+      'multiChangeGroupHint':
+          'You will change group of all selected galleries.',
       'multiDeleteHint': 'You will delete all selected galleries.',
-      'blankImageHint': 'Downloading the image returned an empty result, trying to re-parse.',
+      'blankImageHint':
+          'Downloading the image returned an empty result, trying to re-parse.',
       'peakHoursHint': 'Downloading original files during peak hours requires GP, and you do not have enough, downloading is paused.',
       'oldGalleryHint': 'Downloading original files of this gallery requires GP, and you do not have enough.',
       'exceedLimitHint': 'You have reached the image limit, and do not have sufficient GP to buy a download quota.',
@@ -710,7 +720,8 @@ class en_US {
       'pageAtLeast': 'Page At Least',
       'pageAtMost': 'Page At Most',
       'pagesBetween': 'Pages Between',
-      'pageRangeSelectHint': 'min <= 1000, max >= 10\nmin/max <= 0.8, max-min >= 20',
+      'pageRangeSelectHint':
+          'min <= 1000, max >= 10\nmin/max <= 0.8, max-min >= 20',
       'to': 'to',
       'minimumRating': 'Minimum Rating',
       'disableFilterForLanguage': 'Disable Filter For Language',
@@ -746,15 +757,13 @@ class en_US {
       'hundredsOfCountTemplate': 'Hundreds of results',
       'thousandsOfCountTemplate': 'Thousands of results',
 
-      /// about page
-      'author': 'Author',
-      'Q&A': 'Q&A',
-      'telegramHint': 'You can ask your questions in github first',
-
       /// download setting page
       'downloadPath': 'Download Path',
-      'changeDownloadPathHint':
-          'Long press to change(do not use SD-Card or any system path). Will copy downloaded galleries automatically and keep old files. If you meet any error, try to reset.',
+      'changeDownloadPathHint': 'Long press to choose the folder for future downloads. Existing content stays in place and can be moved separately.',
+      'moveExistingDownloads': 'Move existing downloads to current folder',
+      'moveExistingDownloadsHint': 'Move gallery and archive downloads from other folders to the current download folder',
+      'movingDownloads': 'Moving downloads',
+      'moveDownloadsResult': 'Moved @count items; @failed failed',
       'resetDownloadPath': 'Reset Download Path',
       'extraGalleryScanPath': 'Extra Gallery Scan Path',
       'extraGalleryScanPathHint': 'To scan and load local galleries',
@@ -764,31 +773,45 @@ class en_US {
       'originalImage': 'Original',
       'resampleImage': 'Resample',
       'defaultGalleryGroup': 'Default Gallery Group',
-      'prioritizeRecentGalleryGroups': 'Prioritize Recently Used Gallery Groups',
+      'prioritizeRecentGalleryGroups':
+          'Prioritize Recently Used Gallery Groups',
       'defaultArchiveGroup': 'Default Archive Group',
       'never': 'Never',
       'manual': 'Manual',
       'always': 'Always',
       'longPress2Reset': 'Long Press to Reset',
-      'needPermissionToChangeDownloadPath': 'Need permission to change download path',
-      'invalidPath': 'Invalid Path. Avoid using SD-Card, system path or root path.',
+      'needPermissionToChangeDownloadPath':
+          'Need permission to change download path',
+      'invalidPath':
+          'Invalid Path. Avoid using SD-Card, system path or root path.',
       'downloadTaskConcurrency': 'Download Concurrency',
+      'closeAppForRestore': 'Close app',
+      'backupSettings': 'Application settings (including Archive Bot)',
+      'backupLogin': 'Login state',
+      'backupArchives': 'Archive tasks and groups',
+      'localBackupHint': 'This local backup may contain passwords and API keys. Keep it private. Archive files stay in the download folder; copy them separately when moving devices.',
+      'legacyBackupHint': 'This older backup contains reading progress, searches, rules and history only. It has no application settings, login state or archive tasks.',
+      'backupRestartHint': 'Import complete. Close and reopen the app to load settings, login state and archive tasks.',
       'needRestart': 'Need restart',
       'speedLimit': 'Speed Limit',
       'speedLimitHint': 'Don\'t download too fast',
       'per': 'per',
       'images': 'images',
       'downloadTimeout': 'Download Timeout',
-      'downloadAllGalleriesOfSamePriority': 'Download All Galleries of Same Priority',
+      'downloadAllGalleriesOfSamePriority':
+          'Download All Galleries of Same Priority',
       'downloadAllGalleriesOfSamePriorityHint': 'Download only 1 gallery simultaneously in 1 group with highest priority by default',
       'alwaysUseDefaultGroup': 'Always Use Default Group',
       'enableStoreMetadataForRestore': 'Enable Store Metadata for Restore',
-      'enableStoreMetadataForRestoreHint': 'If disable this, you can\'t restore download tasks',
+      'enableStoreMetadataForRestoreHint':
+          'If disable this, you can\'t restore download tasks',
       'archiveDownloadIsolateCount': 'Archive Download Thread Count',
       'archiveDownloadIsolateCountHint': 'Sum of threads for all tasks needs to be less than 10, otherwise the download will fail',
       'manageArchiveDownloadConcurrency': 'Manage Archive Download Concurrency',
-      'manageArchiveDownloadConcurrencyHint': 'Archive will wait until there are enough threads to download',
-      'deleteArchiveFileAfterDownload': 'Delete Archive .zip File After Download',
+      'manageArchiveDownloadConcurrencyHint':
+          'Archive will wait until there are enough threads to download',
+      'deleteArchiveFileAfterDownload':
+          'Delete Archive .zip File After Download',
       'restoreDownloadTasks': 'Restore Download Tasks',
       'restoreDownloadTasksHint': 'Restore download tasks by metadata',
       'restoreDownloadTasksSuccess': 'Restore Download Tasks Success',
@@ -796,7 +819,8 @@ class en_US {
       'restoredGalleryCount': 'Restored gallery count',
       'restoredArchiveCount': 'Restored archive count',
       'restoreTasksAutomatically': 'Restore Tasks Automatically',
-      'restoreTasksAutomaticallyHint': 'Restore tasks automatically when app launched',
+      'restoreTasksAutomaticallyHint':
+          'Restore tasks automatically when app launched',
       'brokenDownloadPathHint': 'Seems your download path is broken, download function may be ineffective',
       'brokenExtraScanPathHint': 'Seems your default local gallery path is broken, local gallery may be not recognized',
       'useJH2UpdateGallery': 'Use JH server to accelerate gallery updates',
@@ -815,8 +839,10 @@ class en_US {
       'checkInFailed': 'Check-in failed',
       'checkInSuccess': 'Check-in success',
       'checkInSuccessHint': 'Got GP: %s, current total GP: %s.',
-      'pauseDownloadByInvalidArchiveBotKey': 'Archive bot settings is invalid, download paused',
-      'archiveBotNotConfigured': 'Archive bot is not configured, go to settings?',
+      'pauseDownloadByInvalidArchiveBotKey':
+          'Archive bot settings is invalid, download paused',
+      'archiveBotNotConfigured':
+          'Archive bot is not configured, go to settings?',
       'getBotCostFailed': 'Failed to get bot cost',
       'archiveBotShort': 'Bot',
       'chooseArchiveParseSource': 'Change Parse Source',
@@ -832,8 +858,8 @@ class en_US {
       'parseFailed': 'Parse failed',
       'checkedIn': 'Already checked in today',
       'serverError': 'Archive bot internal error',
-      'useProxyServer': 'Use JHenTai Proxy Server',
-      'useProxyServerHint': 'Route requests through JHenTai server',
+      'useProxyServer': 'Use hClient Proxy Server',
+      'useProxyServerHint': 'Route requests through hClient server',
 
       /// password setting dialog
       'setPasswordHint': 'Please input your password',
@@ -847,7 +873,8 @@ class en_US {
       'upload2cloud': 'Upload to Cloud',
       'upload2cloudHint': 'Upload your current local configuration',
       'tap2upload': 'Tap to upload',
-      'copyIdentificationCodeSuccess': 'Upload successfully. Identification code has been copied',
+      'copyIdentificationCodeSuccess':
+          'Upload successfully. Identification code has been copied',
       'copyShareCode': 'Copy Share Code',
       'import': 'Import',
       'save2Local': 'Save to Local',
@@ -863,9 +890,11 @@ class en_US {
       'inputNumberHint': 'Please input a correct number',
       'inputRegexHint': 'Please input a correct regex',
       'useBuiltInBlockedUsers': 'Enable Built-in User Blocklist',
-      'useBuiltInBlockedUsersHint': 'Filter out gallery comments from users on the blocklist',
+      'useBuiltInBlockedUsersHint':
+          'Filter out gallery comments from users on the blocklist',
       'blockingRules': 'Block Rules',
-      'blockingRulesHint': 'Additional blocking rules for galleries and comments',
+      'blockingRulesHint':
+          'Additional blocking rules for galleries and comments',
       'blockingTarget': 'Blocking Target',
       'blockingAttribute': 'Blocking Attribute',
       'blockingPattern': 'Blocking Pattern',
@@ -879,7 +908,8 @@ class en_US {
       'content': 'Content',
       'incompleteInformation': 'Incomplete information',
       'noBlockingRuleHint': 'Add at least 1 rule',
-      'notSameBlockingRuleTargetHint': 'All sub-rules should have the same blocking target',
+      'notSameBlockingRuleTargetHint':
+          'All sub-rules should have the same blocking target',
       'blockingRuleHelp': '''
 Blocking Target: Filter galleries on the list page or filter comments on the details page. All sub-rules under the same rule must have the same blocking target.
 Blocking Attribute: Specify the attribute of the target based on which the rule is written to block.
@@ -917,8 +947,10 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'tagActionFollow': 'Follow Tag',
       'tagActionHide': 'Hide Tag',
       'tagActionTagSets': 'Manage Tag Sets',
-      'tagActionVoteUpTooltip': 'Vote that this tag is correct for this gallery',
-      'tagActionVoteDownTooltip': 'Vote that this tag is wrong for this gallery',
+      'tagActionVoteUpTooltip':
+          'Vote that this tag is correct for this gallery',
+      'tagActionVoteDownTooltip':
+          'Vote that this tag is wrong for this gallery',
       'tagActionFollowHint': 'Add this tag to a watched tag set',
       'tagActionHideHint': 'Add this tag to a hidden tag set',
       'tagActionTagSetsHint': 'Open tag set management',
@@ -941,6 +973,210 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'permissionPermanentlyDeniedHint': 'Saving to album requires permission. Please go to system settings and grant full access to this app',
       'goToSetting': 'Go to settings',
       'other': 'Other',
+      'webdavTitle': 'WebDAV',
+      'webdavAddress': 'WebDAV address',
+      'webdavUsername': 'Username',
+      'webdavPassword': 'Password',
+      'webdavRootPath': 'Root path',
+      'webdavSave': 'Save connection',
+      'webdavBackup': 'Back up now',
+      'webdavRestore': 'Restore',
+      'webdavRefresh': 'Refresh backups',
+      'webdavSaved': 'Saved connection',
+      'webdavBackupComplete': 'Backup complete',
+      'webdavRestoreComplete': 'Restore complete',
+      'webdavSnapshots': 'Backups',
+      'webdavNoSnapshots': 'No backups found',
+      'webdavSnapshot': 'Backup',
+      'webdavDevice': 'Device',
+      'webdavAuthError':
+          'WebDAV authentication failed. Check your username and password.',
+      'webdavNetworkError': 'Could not connect to WebDAV.',
+      'webdavMissingError': 'Backup file was not found.',
+      'webdavTransferError': 'WebDAV transfer failed',
+      'backupBotCredential': 'Include Archive Bot key',
+      'backupProxyCredential': 'Include proxy password',
+      'backupGroups': 'Groups (names and order)',
+      'backupRestartNotice':
+          'Restore complete. Close and reopen the app to apply settings.',
+      'cloudRefresh': 'Refresh cloud',
+      'cloudSearch': 'Search title, ID, uploader or tags',
+      'cloudAllTypes': 'All',
+      'cloudOriginal': 'Original',
+      'cloudResampled': 'Resampled',
+      'cloudUnspecified': 'Unspecified',
+      'cloudEmpty': 'No cloud galleries yet',
+      'cloudMore': 'More',
+      'cloudVersions': 'versions',
+      'cloudPages': 'pages',
+      'cloudLocalAvailable': 'Available locally',
+      'cloudRemoteAvailable': 'Available in cloud',
+      'cloudOpen': 'Open',
+      'cloudRestore': 'Download to device',
+      'cloudRestoreFailed': 'Restore failed. Please try again.',
+      'cloudConfigureWebDav': 'Configure WebDAV to browse cloud galleries',
+      'cloudUpload': 'Upload to cloud',
+      'cloudUploadAndClean': 'Remove local copy after upload',
+      'cloudNoCompleted': 'No completed downloads selected',
+      'transferUpload': 'Upload',
+      'transferWaiting': 'Waiting',
+      'cloudQueued': 'Added to sync queue',
+      'cloudSyncFailed': 'Sync failed',
+      'cloudSyncJobs': 'Transfer tasks',
+      'cloudWaitingInput': 'Waiting for download',
+      'cloudPaused': 'Paused',
+      'cloudFailed': 'Failed',
+      'cloudPublishing': 'Finishing upload',
+      'cloudUploading': 'Uploading',
+      'cloudPause': 'Pause',
+      'cloudRetry': 'Retry',
+      'cloudCleanLocal': 'Clean local copy',
+      'cloudCleanConfirm': 'Keep a cloud copy and remove this local copy?',
+      'cloudReleasing': 'Releasing local files',
+      'cloudReleased': 'Local files released',
+      'cloudActions': 'Actions',
+      'cloudHistory': 'Revision history',
+      'cloudNoHistory': 'No earlier revisions',
+      'cloudEditRevision': 'Edit metadata',
+      'cloudTitle': 'Title',
+      'cloudParentGid': 'Parent gallery ID',
+      'cloudLookupSource': 'Look up source relation',
+      'cloudSourceLookupFailed': 'Could not sync website metadata',
+
+      'close': 'Close',
+      'clear': 'Clear',
+
+      /// WebDAV connection and cloud library
+      'cloudCachedLibrary': 'Showing previously loaded galleries',
+      'cloudCancelUpload': 'Cancel upload',
+      'cloudChooseUploads': 'Choose galleries to upload',
+      'cloudClearFilters': 'Clear filters',
+      'cloudDownloading': 'Downloading…',
+      'cloudEmptyHint': 'Upload local galleries to browse and download them on other devices.',
+      'cloudFailedCount': '@count tasks need attention',
+      'cloudFailureDetailsUnavailable':
+          'No failure details were recorded. Try uploading again.',
+      'cloudFilter': 'Filter galleries',
+      'cloudKeepLocal': 'Keep local copy',
+      'cloudLibrary': 'Cloud library',
+      'cloudLoadFailed': 'Could not load cloud galleries',
+      'cloudLoadingHint':
+          'Reading galleries from this connection. Please wait.',
+      'cloudLoadingLibrary': 'Loading cloud galleries',
+      'cloudNoMatches': 'No matching galleries',
+      'cloudNoMatchesHint': 'Try another search or clear the filters.',
+      'cloudNoTransfers': 'No transfer tasks',
+      'cloudNoTransfersHint': 'Upload a local gallery or open a cloud gallery to see progress here.',
+      'cloudQueuePartialFailure':
+          'Added @count tasks; @failed could not be added',
+      'cloudQueuedFeedback': 'Added @count upload tasks',
+      'cloudQueuedState': 'Waiting to upload',
+      'cloudResume': 'Resume upload',
+      'cloudSearchLocal': 'Search local titles or gallery IDs',
+      'cloudStartTitle': 'Connect your cloud library',
+      'cloudTaskCount': '@count transfer tasks',
+      'cloudTaskListFailed': 'Could not load upload tasks. Tap to retry.',
+      'cloudUploadAndCleanConfirm': 'The selected local copies will be removed after upload. Cloud galleries will be kept and can be downloaded at any time.',
+      'cloudUploadAndCleanHint':
+          'Remove local copies after upload. Cloud galleries will be kept.',
+      'cloudUploadSelected': 'Upload @count selected',
+      'cloudViewTransfers': 'View upload tasks',
+      'webDavErrorAuthentication': 'The username or password is incorrect. Check the connection settings.',
+      'webDavErrorCodec':
+          'Could not process gallery files. Check the local files and retry.',
+      'webDavErrorConflict':
+          'Cloud content or the connection changed. Refresh and retry.',
+      'webDavErrorInvalidData':
+          'The data is invalid or incomplete. Check the files and retry.',
+      'webDavErrorInvalidResponse':
+          'The server returned an invalid response. Check the WebDAV address.',
+      'webDavErrorLocalIo': 'Could not read or write local files. Check storage space and permissions.',
+      'webDavErrorMissing':
+          'The required cloud file or folder is missing. Refresh and retry.',
+      'webDavErrorNetwork': 'Could not connect to the server. Check the network and WebDAV address, then retry.',
+      'webDavErrorPermission':
+          'The server denied access. Check the account and folder permissions.',
+      'webDavErrorServer':
+          'The server could not process the request. Try again later.',
+      'webDavErrorUnknown': 'The operation did not complete. Please retry.',
+      'webdavAnonymous': 'No username',
+      'webdavBackupWorking': 'Creating backup…',
+      'webdavBackupsLoadError': 'Could not load configuration backups',
+      'webdavConfigBackup': 'Configuration backups',
+      'webdavConfigBackupHint': 'Back up settings, history and other app data. Upload gallery files from your library.',
+      'webdavConfigureConnection': 'Set up connection',
+      'webdavConnection': 'Current connection',
+      'webdavConnectionFolderMissing': 'The app folder does not exist yet. It will be created on the first upload. You can save this connection.',
+      'webdavConnectionHint':
+          'Gallery sync and configuration backups use this connection.',
+      'webdavConnectionReady': 'Connected. The app folder is readable.',
+      'webdavConnectionRequired':
+          'Set up a connection to create or restore backups.',
+      'webdavCreateBackup': 'Create configuration backup',
+      'webdavDraftHint': 'Tests use this form. Gallery sync and backups use the saved connection.',
+      'webdavEditConnection': 'Edit connection',
+      'webdavHidePassword': 'Hide password',
+      'webdavInvalidAddress': 'Enter a valid HTTP or HTTPS address',
+      'webdavInvalidRootPath': 'Folder names cannot be . or ..',
+      'webdavNoBackupsHint': 'Create a backup to restore your app data later.',
+      'webdavNotConfigured': 'WebDAV is not configured',
+      'webdavRestoreWorking': 'Restoring backup…',
+      'webdavRetry': 'Retry',
+      'webdavRootPathHint': 'Optional, relative to the server address',
+      'webdavSaving': 'Saving…',
+      'webdavServerRoot': 'Server root',
+      'webdavShowPassword': 'Show password',
+      'webdavSyncResumeError':
+          'Connection saved, but sync tasks could not resume.',
+      'webdavTestConnection': 'Test connection',
+      'webdavTesting': 'Testing…',
+      'cloudCollections': 'Collections',
+      'cloudCategories': 'Website categories',
+      'webdavAutoGallerySync': 'Automatically sync completed galleries',
+      'webdavAutoGallerySyncHint': 'Includes existing completed galleries, future downloads and metadata changes. Synced galleries move to the cloud library and keep local images for offline reading.',
+      'webdavExistingReleaseCount': 'Tasks set to release local images: @count',
+      'webdavExistingReleaseHint':
+          'These tasks keep your earlier release choice.',
+      'cloudSyncAndKeepImages':
+          'Move to the cloud library and keep local images',
+      'cloudSyncedOne': '“@title” synced to the cloud',
+      'cloudSyncedCount': '@count tasks synced to the cloud',
+      'cloudTags': 'Tags',
+      'cloudSyncWebsiteMetadata': 'Sync website metadata',
+      'cloudSelect': 'Select gallery',
+      'cloudSelectedCount': '@count selected',
+      'cloudMetadataBatchFailed':
+          'Website metadata sync failed for @count galleries',
+      'cloudWebDavSettings': 'WebDAV settings',
+      'cloudEditCollections': 'Edit collections',
+      'cloudNewCollection': 'New collection',
+      'cloudCancelRestore': 'Cancel restore',
+      'cloudStatistics': 'Library statistics',
+      'cloudStatsOverview': 'Overview',
+      'cloudStatsDetails': 'Gallery details',
+      'cloudStatsIndexed': 'Indexed gallery images on this connection',
+      'cloudStatsFamilies': 'Works',
+      'cloudStatsGids': 'GID versions',
+      'cloudStatsMultiVersion': 'Works with multiple GIDs',
+      'cloudStatsContentCopies': 'Content copies',
+      'cloudStatsPages': 'Total pages',
+      'cloudStatsRawBytes': 'Original size',
+      'cloudStatsStoredBytes': 'Stored size',
+      'cloudStatsCompression': 'Compression savings',
+      'cloudStatsUniqueObjects': 'Unique image objects',
+      'cloudStatsUniqueBytes': 'Deduplicated image size',
+      'cloudStatsReuseSavings': 'Repeated reference savings',
+      'cloudStatsIndexedAt': 'Index refreshed at @time',
+      'cloudStatsPartial': 'Index is incomplete',
+      'cloudStatsRefreshing': 'Refreshing index',
+      'cloudStatsCached': 'Refresh failed. Showing the existing index.',
+      'cloudMoreActions': 'More actions',
+      'cloudAddCollection': 'Add collection',
+      'singlePageTransfer': 'Redownload page',
+      'webdavBackupTransfer': 'WebDAV configuration backup',
+      'systemTransferNotifications': 'System transfer notifications',
+      'navigationMenu': 'Navigation menu',
+      'localGalleryHelp': 'Local gallery help',
     };
   }
 }

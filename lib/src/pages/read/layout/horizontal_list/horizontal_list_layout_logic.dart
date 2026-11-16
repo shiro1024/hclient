@@ -171,7 +171,8 @@ class HorizontalListLayoutLogic extends BaseLayoutLogic {
       Duration(milliseconds: (readSetting.autoModeInterval.value * 1000).toInt()),
       (_) {
         /// changed read setting
-        if (readPageLogic.effectiveReadDirection != ReadDirection.left2rightList && readPageLogic.effectiveReadDirection != ReadDirection.right2leftList) {
+        if (readPageLogic.effectiveReadDirection != ReadDirection.left2rightList &&
+            readPageLogic.effectiveReadDirection != ReadDirection.right2leftList) {
           Get.engine.addPostFrameCallback((_) {
             readPageLogic.closeAutoMode();
           });

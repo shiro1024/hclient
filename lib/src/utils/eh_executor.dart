@@ -20,10 +20,7 @@ abstract class EHExecutor {
   Rate? rate;
 
   /// Async task executor.
-  factory EHExecutor({
-    int concurrency = 1,
-    Rate? rate,
-  }) =>
+  factory EHExecutor({int concurrency = 1, Rate? rate}) =>
       _EHExecutor(concurrency, rate);
 
   /// The number of tasks that are currently running.
@@ -37,7 +34,11 @@ abstract class EHExecutor {
 
   /// Schedules an async task and returns with a future that completes when the
   /// task is finished. Task may not get executed immediately.
-  Future<R> scheduleTask<R>(int priority, AsyncTask<R> task);
+  Future<R> scheduleTask<R>(
+    int priority,
+    AsyncTask<R> task, {
+    void Function(bool running)? onExecutionChanged,
+  });
 
   /// Schedules an async task and returns its stream. The task is considered
   /// running until the stream is closed.
@@ -68,7 +69,9 @@ class _EHExecutor implements EHExecutor {
   int _concurrency;
   Rate? _rate;
   final Map<AsyncTask, _PriorityItem> task2WaitingItem = {};
-  final PriorityQueue<_PriorityItem> _waiting = PriorityQueue<_PriorityItem>((a, b) => a.priority - b.priority);
+  final PriorityQueue<_PriorityItem> _waiting = PriorityQueue<_PriorityItem>(
+    (a, b) => a.priority - b.priority,
+  );
   final ListQueue<_PriorityItem> _running = ListQueue<_PriorityItem>();
   final ListQueue<DateTime> _started = ListQueue<DateTime>();
   final StreamController _onChangeController = StreamController.broadcast();
@@ -112,7 +115,11 @@ class _EHExecutor implements EHExecutor {
   }
 
   @override
-  Future<R> scheduleTask<R>(int priority, AsyncTask<R> task) async {
+  Future<R> scheduleTask<R>(
+    int priority,
+    AsyncTask<R> task, {
+    void Function(bool running)? onExecutionChanged,
+  }) async {
     if (isClosing) throw Exception('Executor doesn\'t accept tasks.');
     final item = _PriorityItem<R>(priority);
     _waiting.add(item);
@@ -130,10 +137,13 @@ class _EHExecutor implements EHExecutor {
       item.result.completeError(TimeoutException('Executor is closing'));
     } else {
       try {
+        onExecutionChanged?.call(true);
         final r = await task();
         item.result.complete(r);
       } catch (e) {
         item.result.completeError(e);
+      } finally {
+        onExecutionChanged?.call(false);
       }
     }
     _running.remove(item);
@@ -179,7 +189,12 @@ class _EHExecutor implements EHExecutor {
           complete();
           return null;
         }
-        streamSubscription = stream.listen(streamController.add, onError: streamController.addError, onDone: complete, cancelOnError: true);
+        streamSubscription = stream.listen(
+          streamController.add,
+          onError: streamController.addError,
+          onDone: complete,
+          cancelOnError: true,
+        );
       } catch (e, st) {
         completeWithError(e, st);
       }
@@ -267,7 +282,9 @@ class _EHExecutor implements EHExecutor {
       _running.add(item);
       item.done.future.whenComplete(() {
         _trigger();
-        if (!_closing && _onChangeController.hasListener && !_onChangeController.isClosed) {
+        if (!_closing &&
+            _onChangeController.hasListener &&
+            !_onChangeController.isClosed) {
           _onChangeController.add(null);
         }
       });

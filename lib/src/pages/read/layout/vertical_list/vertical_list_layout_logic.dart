@@ -251,7 +251,8 @@ class VerticalListLayoutLogic extends BaseLayoutLogic {
     if (readPageState.imageContainerSizes[imageIndex] != null) {
       return readPageState.imageContainerSizes[imageIndex]!;
     }
-    return Size(readPageState.displayRegionSize.width * readPageLogic.effectiveImageRegionWidthRatio / 100, readPageState.displayRegionSize.height / 2);
+    return Size(
+        readPageState.displayRegionSize.width * readPageLogic.effectiveImageRegionWidthRatio / 100, readPageState.displayRegionSize.height / 2);
   }
 
   /// Compute image container size

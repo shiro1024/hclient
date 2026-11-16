@@ -14,17 +14,14 @@ import 'package:throttling/throttling.dart';
 import '../../config/ui_config.dart';
 import '../../database/database.dart';
 import '../../mixin/update_global_gallery_status_logic_mixin.dart';
-import '../../model/gallery_image.dart';
 import '../../model/read_page_info.dart';
 import '../../routes/routes.dart';
 import '../../service/archive_download_service.dart';
-import '../../service/gallery_download/download_path_resolver.dart';
+import '../../service/local_content_service.dart';
 import '../../service/gallery_download/gallery_download_service.dart';
-import '../../service/super_resolution_service.dart';
 import '../../setting/preference_setting.dart';
 import '../../setting/read_setting.dart';
 import '../../utils/date_util.dart';
-import '../../utils/process_util.dart';
 import '../../utils/route_util.dart';
 import '../../utils/table.dart' as t;
 import '../../widget/eh_alert_dialog.dart';
@@ -171,7 +168,9 @@ class DownloadSearchLogic extends GetxController with UpdateGlobalGalleryStatusL
           if (regExp.hasMatch('${tagData.namespace}:${tagData.key}')) {
             return true;
           }
-          if (tagData.translatedNamespace != null && tagData.tagName != null && regExp.hasMatch('${tagData.translatedNamespace}:${tagData.tagName}')) {
+          if (tagData.translatedNamespace != null &&
+              tagData.tagName != null &&
+              regExp.hasMatch('${tagData.translatedNamespace}:${tagData.tagName}')) {
             return true;
           }
         }
@@ -188,7 +187,9 @@ class DownloadSearchLogic extends GetxController with UpdateGlobalGalleryStatusL
           if (regExp.hasMatch('${tagData.namespace}:${tagData.key}')) {
             return true;
           }
-          if (tagData.translatedNamespace != null && tagData.tagName != null && regExp.hasMatch('${tagData.translatedNamespace}:${tagData.tagName}')) {
+          if (tagData.translatedNamespace != null &&
+              tagData.tagName != null &&
+              regExp.hasMatch('${tagData.translatedNamespace}:${tagData.tagName}')) {
             return true;
           }
         }
@@ -238,7 +239,8 @@ class DownloadSearchLogic extends GetxController with UpdateGlobalGalleryStatusL
   Future<void> toggleSearchType() async {
     await state.searchTypeCompleter.future;
 
-    state.searchType = state.searchType == DownloadSearchConfigTypeEnum.simple ? DownloadSearchConfigTypeEnum.regex : DownloadSearchConfigTypeEnum.simple;
+    state.searchType =
+        state.searchType == DownloadSearchConfigTypeEnum.simple ? DownloadSearchConfigTypeEnum.regex : DownloadSearchConfigTypeEnum.simple;
     updateSafely([searchFieldId]);
     handleSearchFieldChanged(textEditingController.text);
     await localConfigService.write(configKey: ConfigEnum.downloadSearchPageType, value: state.searchType.code.toString());
@@ -249,34 +251,28 @@ class DownloadSearchLogic extends GetxController with UpdateGlobalGalleryStatusL
       return;
     }
 
-    if (readSetting.useThirdPartyViewer.isTrue && readSetting.thirdPartyViewerPath.value != null) {
-      GalleryDownloadInfo galleryData = galleryDownloadService.galleryDownloadInfos[gallery.gid]!;
-      openThirdPartyViewer(DownloadPathResolver.computeGalleryDownloadAbsolutePath(galleryData.toGalleryDownloadedData()));
-    } else {
-      String? string = await localConfigService.read(configKey: ConfigEnum.readIndexRecord, subConfigKey: gallery.gid.toString());
-      int readIndexRecord = (string == null ? 0 : (int.tryParse(string) ?? 0));
+    String? string = await localConfigService.read(configKey: ConfigEnum.readIndexRecord, subConfigKey: gallery.gid.toString());
+    int readIndexRecord = (string == null ? 0 : (int.tryParse(string) ?? 0));
 
-      /// Ensure image list is resident before entering read page.
-      await galleryDownloadService.galleryDownloadInfos[gallery.gid]!.ensureImagesLoaded();
+    /// Ensure image list is resident before entering read page.
+    await galleryDownloadService.galleryDownloadInfos[gallery.gid]!.ensureImagesLoaded();
 
-      ReadDirection? readDirection = isWebtoonGalleryFromTagDataList(gallery.tags) ? ReadDirection.top2bottomList : null;
+    ReadDirection? readDirection = isWebtoonGalleryFromTagDataList(gallery.tags) ? ReadDirection.top2bottomList : null;
 
-      toRoute(
-        Routes.read,
-        arguments: ReadPageInfo(
-          mode: ReadMode.downloaded,
-          gid: gallery.gid,
-          token: gallery.token,
-          galleryTitle: gallery.title,
-          galleryUrl: gallery.galleryUrl,
-          initialIndex: readIndexRecord,
-          readProgressRecordStorageKey: gallery.gid.toString(),
-          pageCount: gallery.pageCount,
-          useSuperResolution: superResolutionService.get(gallery.gid, SuperResolutionType.gallery) != null,
-          readDirection: readDirection,
-        ),
-      );
-    }
+    toRoute(
+      Routes.read,
+      arguments: ReadPageInfo(
+        mode: ReadMode.downloaded,
+        gid: gallery.gid,
+        token: gallery.token,
+        galleryTitle: gallery.title,
+        galleryUrl: gallery.galleryUrl,
+        initialIndex: readIndexRecord,
+        readProgressRecordStorageKey: gallery.gid.toString(),
+        pageCount: gallery.pageCount,
+        readDirection: readDirection,
+      ),
+    );
   }
 
   Future<void> goToArchiveReadPage(ArchiveSearchVO archive) async {
@@ -284,34 +280,19 @@ class DownloadSearchLogic extends GetxController with UpdateGlobalGalleryStatusL
       return;
     }
 
-    if (readSetting.useThirdPartyViewer.isTrue && readSetting.thirdPartyViewerPath.value != null) {
-      ArchiveDownloadedData archiveData = archiveDownloadService.archives.firstWhere((a) => a.gid == archive.gid);
-      openThirdPartyViewer(archiveDownloadService.computeArchiveUnpackingPath(archiveData));
-    } else {
-      String? string = await localConfigService.read(configKey: ConfigEnum.readIndexRecord, subConfigKey: archive.gid.toString());
-      int readIndexRecord = (string == null ? 0 : (int.tryParse(string) ?? 0));
+    String? string = await localConfigService.read(configKey: ConfigEnum.readIndexRecord, subConfigKey: archive.gid.toString());
+    int readIndexRecord = (string == null ? 0 : (int.tryParse(string) ?? 0));
 
-      List<GalleryImage> images = await archiveDownloadService.getUnpackedImages(archive.gid);
-
-      ReadDirection? readDirection = isWebtoonGalleryFromTagDataList(archive.tags) ? ReadDirection.top2bottomList : null;
-
-      toRoute(
-        Routes.read,
-        arguments: ReadPageInfo(
-          mode: ReadMode.archive,
-          gid: archive.gid,
-          galleryTitle: archive.title,
-          galleryUrl: archive.galleryUrl,
-          initialIndex: readIndexRecord,
-          pageCount: images.length,
-          isOriginal: archive.isOriginal,
-          readProgressRecordStorageKey: archive.gid.toString(),
-          images: images,
-          useSuperResolution: superResolutionService.get(archive.gid, SuperResolutionType.archive) != null,
-          readDirection: readDirection,
-        ),
-      );
-    }
+    final copyId = await archiveDownloadService.ensureContentCopy(archive.gid);
+    if (copyId == null) return;
+    final info = await localContentService.readPageInfoForCopy(
+      copyId,
+      initialIndex: readIndexRecord,
+    );
+    info.readDirection = isWebtoonGalleryFromTagDataList(archive.tags)
+        ? ReadDirection.top2bottomList
+        : null;
+    toRoute(Routes.read, arguments: info);
   }
 
   void onLongPressGallery(BuildContext context, GallerySearchVO gallery, {Offset? position}) {

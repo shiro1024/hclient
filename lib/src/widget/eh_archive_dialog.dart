@@ -64,9 +64,9 @@ class _EHArchiveDialogState extends State<EHArchiveDialog> {
     candidates = List.of(widget.candidates);
     candidates.remove(group);
     candidates.insert(0, group);
-    
+
     _getArchiveInfo();
-    
+
     if (useBot) {
       _checkBalance();
       _getBotCost();
@@ -188,7 +188,7 @@ class _EHArchiveDialogState extends State<EHArchiveDialog> {
 
   Future<void> _checkBalance() async {
     if (balanceState == LoadingState.loading) {
-      return; 
+      return;
     }
     if (!archiveBotSetting.isReady) {
       return;

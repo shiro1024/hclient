@@ -46,9 +46,6 @@ class PathService with JHLifeCircleBeanErrorCatch implements JHLifeCircleBean {
     if (GetPlatform.isWindows && appSupportDir != null) {
       return appSupportDir!;
     }
-    if (GetPlatform.isLinux && appSupportDir != null) {
-      return appSupportDir!;
-    }
     return appDocDir ?? appSupportDir ?? systemDownloadDir!;
   }
 }

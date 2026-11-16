@@ -36,11 +36,7 @@ class _LogPageState extends State<LogPage> {
         title: Text(basename(log.path)),
         centerTitle: true,
         elevation: 1,
-        titleTextStyle: Theme
-            .of(context)
-            .textTheme
-            .titleMedium
-            ?.copyWith(fontWeight: FontWeight.bold),
+        titleTextStyle: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         actions: [
           if (!GetPlatform.isDesktop) IconButton(onPressed: _shareLog, icon: const Icon(Icons.share)),
           IconButton(onPressed: _copyLog, icon: const Icon(Icons.copy)),
@@ -50,21 +46,19 @@ class _LogPageState extends State<LogPage> {
         child: SelectableText(
           logText,
           scrollPhysics: const ClampingScrollPhysics(),
-          style: TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.bold,
-            fontFamily: Platform.isAndroid ? 'monospace' : 'PingFang HK',
-          ),
+          style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, fontFamily: Platform.isAndroid ? 'monospace' : 'PingFang HK'),
         ),
       ).marginSymmetric(horizontal: 4),
     );
   }
 
   void _shareLog() {
-    Share.shareXFiles(
-      [XFile(log.path)],
-      text: basename(log.path),
-      sharePositionOrigin: Rect.fromLTWH(0, 0, fullScreenWidth, screenHeight * 2 / 3),
+    SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(log.path)],
+        text: basename(log.path),
+        sharePositionOrigin: Rect.fromLTWH(0, 0, fullScreenWidth, screenHeight * 2 / 3),
+      ),
     );
   }
 

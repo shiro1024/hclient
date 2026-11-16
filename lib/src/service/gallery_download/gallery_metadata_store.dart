@@ -93,21 +93,93 @@ class _GalleryMetadataStore {
     await info.ensureImagesLoaded();
 
     final List<GalleryImage?>? images = info.images;
-    final List<Map<String, dynamic>?> imagesJson = images?.map((img) => img?.toJson()).toList() ?? <Map<String, dynamic>?>[];
-
-    Map<String, Object> metadata = {
-      'gallery': gallery.toGalleryDownloadedData().toJson(),
-      'images': jsonEncode(imagesJson),
-    };
-
     try {
-      io.File file = io.File(
-        path.join(DownloadPathResolver.computeGalleryDownloadAbsolutePath(gallery.toGalleryDownloadedData()), metadataFileName),
+      final data = gallery.toGalleryDownloadedData();
+      final root = DownloadPathResolver.computeGalleryDownloadAbsolutePath(
+        data,
       );
-      if (!await file.exists()) {
-        await file.create(recursive: true);
+      final existingId = await localContentService.copyIdForRoot(root);
+      if (existingId != null &&
+          await localContentService.rebuildProjection(
+            existingId,
+            flush:
+                info.downloadProgress.downloadStatus == DownloadStatus.paused,
+          )) {
+        return;
       }
-      await file.writeAsString(jsonEncode(metadata));
+      final copyId = await localContentService.ensureCopy(
+        gid: gallery.gid,
+        representation: gallery.downloadOriginalImage
+            ? 'original'
+            : 'resampled',
+        rootPath: root,
+        makeCurrent: false,
+      );
+      final ownerPages = {
+        for (final page in await localContentService.repository.listPages(
+          copyId,
+        ))
+          if (LocalContentService.residentPageFact(page) != null)
+            page.ordinal: page,
+      };
+      final residentPages = {
+        for (final page in ownerPages.values)
+          page.ordinal: LocalContentService.residentPageFact(page)!,
+      };
+      final profiles = {
+        for (final page in residentPages.values)
+          if (page.codecProfile != ContentCodec.rawProfile)
+            page.codecProfile:
+                ContentCodec.profileDefinitions[page.codecProfile]!,
+      };
+      final pages = <DirectoryRecoveryPage>[];
+      final projectedImages = <GalleryImage?>[];
+      for (var i = 0; i < gallery.pageCount; i++) {
+        final image = images != null && i < images.length ? images[i] : null;
+        final absolute = image?.path == null
+            ? null
+            : DownloadPathResolver.computeImageDownloadAbsolutePathFromRelativePath(
+                image!.path!,
+              );
+        final residentPath = ownerPages[i]?.relativePath;
+        projectedImages.add(
+          residentPath == null || image == null
+              ? image
+              : image.copyWith(
+                  path: path.relative(
+                    path.join(root, residentPath),
+                    from: pathService.getVisibleDir().path,
+                  ),
+                ),
+        );
+        pages.add(
+          DirectoryRecoveryPage(
+            i,
+            residentPath ??
+                (absolute == null ? null : path.relative(absolute, from: root)),
+            image?.downloadStatus.name ?? DownloadStatus.none.name,
+          ),
+        );
+      }
+      localContentService.scheduleProjection(
+        root,
+        DirectoryRecoveryProjection(
+          copyId: copyId,
+          taskKind: 'gallery',
+          taskState: info.downloadProgress.downloadStatus.name,
+          taskJson: jsonEncode({
+            'gallery': data.toJson(),
+            'images': projectedImages.map((img) => img?.toJson()).toList(),
+          }),
+          pages: pages,
+          residentPages: residentPages,
+          codecProfiles: profiles,
+        ),
+        flush: info.downloadProgress.downloadStatus == DownloadStatus.paused,
+      );
+      if (info.downloadProgress.downloadStatus == DownloadStatus.paused) {
+        await localContentService.flushProjection(root);
+      }
     } catch (e, st) {
       log.error('Save gallery metadata failed, gid: ${gallery.gid}', e, st);
     }
@@ -117,88 +189,102 @@ class _GalleryMetadataStore {
   /// all compatibility back-fills (missing fields, sanitizedTitle, recomputed
   /// image paths after download-location change, and the downloaded-status
   /// sanity check).
-  static ({GalleryDownloadedData gallery, List<GalleryImage?> images})? readForRestore(io.Directory galleryDir) {
-    final Map<String, dynamic>? raw = read(galleryDir);
+  static ({
+    GalleryDownloadedData gallery,
+    List<GalleryImage?> images,
+    DirectoryRecoveryProjection projection,
+    String rootPath,
+  })?
+  readForRestore(io.Directory galleryDir) {
+    final projectionFile = io.File(
+      path.join(galleryDir.path, '.content.sqlite'),
+    );
+    if (!projectionFile.existsSync()) return null;
+    final projection = DirectoryRecoveryCodec.read(projectionFile);
+    final Map<String, dynamic>? raw = _readSnapshot(projection);
     if (raw == null) {
       return null;
     }
 
-    GalleryDownloadedData gallery = GalleryDownloadedData.fromJson(raw['gallery']);
+    GalleryDownloadedData gallery = GalleryDownloadedData.fromJson(
+      raw['gallery'],
+    );
 
     /// The scanned directory is where the bytes actually live. Old metadata
     /// has no sanitizedTitle, and metadata produced by an earlier buggy restore
     /// may contain a title computed with the newer byte-based rule. Reconcile
     /// both cases to the actual `{gid} - {title}` directory on disk.
-    final String restoredSanitizedTitle = DownloadPathResolver.resolveSanitizedGalleryTitleForRestore(
-      gid: gallery.gid,
-      rawTitle: gallery.title,
-      persistedSanitizedTitle: gallery.sanitizedTitle,
-      galleryDirectoryPath: galleryDir.path,
-    );
+    final String restoredSanitizedTitle =
+        DownloadPathResolver.resolveSanitizedGalleryTitleForRestore(
+          gid: gallery.gid,
+          rawTitle: gallery.title,
+          persistedSanitizedTitle: gallery.sanitizedTitle,
+          galleryDirectoryPath: galleryDir.path,
+        );
     if (gallery.sanitizedTitle != restoredSanitizedTitle) {
       gallery = gallery.copyWith(sanitizedTitle: Value(restoredSanitizedTitle));
     }
 
-    List<GalleryImage?> images = (jsonDecode(raw['images']) as List).map((_map) => _map == null ? null : GalleryImage.fromJson(_map)).toList();
+    List<GalleryImage?> images = (raw['images'] as List)
+        .map(
+          (_map) => _map == null
+              ? null
+              : GalleryImage.fromJson((_map as Map).cast<String, dynamic>()),
+        )
+        .toList();
 
     /// To deal with changed download location, compute download path again.
+    final pagesByOrdinal = {
+      for (final page in projection.pages) page.ordinal: page,
+    };
     for (int serialNo = 0; serialNo < images.length; serialNo++) {
       if (images[serialNo] == null) {
         continue;
       }
-      images[serialNo]!.path = DownloadPathResolver.computeImageDownloadRelativePath(gallery, _downloadUrlFor(gallery, images[serialNo]!), serialNo);
+      final storedPage = pagesByOrdinal[serialNo];
+      images[serialNo]!.path = storedPage?.relativePath == null
+          ? DownloadPathResolver.computeImageDownloadRelativePath(
+              gallery,
+              _downloadUrlFor(gallery, images[serialNo]!),
+              serialNo,
+            )
+          : path.relative(
+              path.join(galleryDir.path, storedPage!.relativePath!),
+              from: pathService.getVisibleDir().path,
+            );
       images[serialNo]!.imageHash ??= '';
     }
 
     /// For some reason, downloaded status is not updated correctly, check it again
     if (gallery.downloadStatusIndex != DownloadStatus.downloaded.index) {
-      int downloadedImageCount = images.fold(0, (total, image) => total + (image?.downloadStatus == DownloadStatus.downloaded ? 1 : 0));
+      int downloadedImageCount = images.fold(
+        0,
+        (total, image) =>
+            total +
+            (image?.downloadStatus == DownloadStatus.downloaded ? 1 : 0),
+      );
       if (downloadedImageCount == gallery.pageCount) {
-        gallery = gallery.copyWith(downloadStatusIndex: DownloadStatus.downloaded.index);
+        gallery = gallery.copyWith(
+          downloadStatusIndex: DownloadStatus.downloaded.index,
+        );
       }
     }
 
-    return (gallery: gallery, images: images);
+    return (
+      gallery: gallery,
+      images: images,
+      projection: projection,
+      rootPath: galleryDir.path,
+    );
   }
 
-  /// Read + parse the metadata file in [galleryDir]. Returns null if the file
-  /// is missing or unparseable. Compatibility back-fills (for fields added in
-  /// later versions) are applied to the gallery map before returning.
-  static Map<String, dynamic>? read(io.Directory galleryDir) {
-    io.File metadataFile = io.File(path.join(galleryDir.path, metadataFileName));
-    if (!metadataFile.existsSync()) {
+  static Map<String, dynamic>? _readSnapshot(
+    DirectoryRecoveryProjection projection,
+  ) {
+    if (projection.taskKind != 'gallery' && projection.taskKind != 'content')
       return null;
-    }
-
-    try {
-      Map metadata = jsonDecode(metadataFile.readAsStringSync());
-
-      /// compatible with new field
-      (metadata['gallery'] as Map).putIfAbsent('downloadOriginalImage', () => false);
-      (metadata['gallery'] as Map).putIfAbsent('sortOrder', () => 0);
-      if ((metadata['gallery'] as Map)['insertTime'] == null) {
-        (metadata['gallery'] as Map)['insertTime'] = DateTime.now().toString();
-      }
-      if ((metadata['gallery'] as Map)['priority'] == null) {
-        (metadata['gallery'] as Map)['priority'] = GalleryDownloadService.defaultDownloadGalleryPriority;
-      }
-      if ((metadata['gallery'] as Map)['groupName'] == null) {
-        (metadata['gallery'] as Map)['groupName'] = 'default';
-      }
-      if (metadata['tags'] == null) {
-        (metadata['gallery'] as Map)['tags'] = '';
-      }
-      if (metadata['tagRefreshTime'] == null) {
-        (metadata['gallery'] as Map)['tagRefreshTime'] = DateTime.now().toString();
-      }
-
-      return {
-        'gallery': metadata['gallery'],
-        'images': metadata['images'],
-      };
-    } catch (e, st) {
-      log.error('Read gallery metadata failed: ${metadataFile.path}', e, st);
-      return null;
-    }
+    final snapshot = jsonDecode(projection.taskJson) as Map<String, dynamic>;
+    if (snapshot['gallery'] == null || snapshot['images'] == null) return null;
+    return snapshot;
   }
 }

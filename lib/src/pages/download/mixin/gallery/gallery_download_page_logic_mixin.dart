@@ -4,33 +4,36 @@ import 'package:jhentai/src/config/ui_config.dart';
 import 'package:jhentai/src/extension/get_logic_extension.dart';
 import 'package:jhentai/src/mixin/scroll_to_top_logic_mixin.dart';
 import 'package:jhentai/src/mixin/update_global_gallery_status_logic_mixin.dart';
-import 'package:jhentai/src/service/super_resolution_service.dart';
-import 'package:jhentai/src/setting/super_resolution_setting.dart';
 
-import '../../../../database/database.dart';
 import '../../../../model/read_page_info.dart';
 import '../../../../routes/routes.dart';
 import '../../../../service/gallery_download/download_path_resolver.dart';
 import '../../../../service/gallery_download/gallery_download_service.dart';
+import '../../../../service/local_content_service.dart';
 import '../../../../service/read_progress_service.dart';
 import '../../../../setting/read_setting.dart';
 import '../../../../setting/preference_setting.dart';
-import '../../../../utils/process_util.dart';
 import '../../../../utils/route_util.dart';
-import '../../../../utils/toast_util.dart';
 import '../../../../utils/convert_util.dart';
 import '../../../../widget/eh_alert_dialog.dart';
 import '../../../../widget/eh_context_menu.dart';
 import '../../../../widget/eh_download_dialog.dart';
 import '../basic/multi_select/multi_select_download_page_logic_mixin.dart';
+import '../basic/webdav_actions.dart';
 
 mixin GalleryDownloadPageLogicMixin on GetxController
-    implements Scroll2TopLogicMixin, MultiSelectDownloadPageLogicMixin<GalleryDownloadInfo>, UpdateGlobalGalleryStatusLogicMixin {
+    implements
+        Scroll2TopLogicMixin,
+        MultiSelectDownloadPageLogicMixin<GalleryDownloadInfo>,
+        UpdateGlobalGalleryStatusLogicMixin {
   final String bodyId = 'bodyId';
 
   final GalleryDownloadService downloadService = galleryDownloadService;
 
-  Future<bool> confirmDestructiveAction({required String title, String? content}) async {
+  Future<bool> confirmDestructiveAction({
+    required String title,
+    String? content,
+  }) async {
     if (!preferenceSetting.confirmDestructiveActions.isTrue) {
       return true;
     }
@@ -64,7 +67,9 @@ mixin GalleryDownloadPageLogicMixin on GetxController
   }
 
   Future<void> handleLongPressGroup(String oldGroup) async {
-    if (downloadService.galleryDownloadInfos.values.every((g) => g.group != oldGroup)) {
+    if (downloadService.galleryDownloadInfos.values.every(
+      (g) => g.group != oldGroup,
+    )) {
       return handleDeleteGroup(oldGroup);
     }
     return handleRenameGroup(oldGroup);
@@ -117,7 +122,11 @@ mixin GalleryDownloadPageLogicMixin on GetxController
   }
 
   @override
-  void handleLongPressOrSecondaryTapItem(GalleryDownloadInfo item, BuildContext context, {Offset? position}) {
+  void handleLongPressOrSecondaryTapItem(
+    GalleryDownloadInfo item,
+    BuildContext context, {
+    Offset? position,
+  }) {
     if (multiSelectDownloadPageState.inMultiSelectMode) {
       toggleSelectItem(item.gid);
     } else {
@@ -133,7 +142,11 @@ mixin GalleryDownloadPageLogicMixin on GetxController
     downloadService.pauseAllDownloadGallery();
   }
 
-  void handleRemoveItem(GalleryDownloadInfo gallery, bool deleteImages, BuildContext context) async {
+  void handleRemoveItem(
+    GalleryDownloadInfo gallery,
+    bool deleteImages,
+    BuildContext context,
+  ) async {
     downloadService.update([downloadService.galleryCountChangedId]);
   }
 
@@ -143,7 +156,9 @@ mixin GalleryDownloadPageLogicMixin on GetxController
   }
 
   Future<void> handleReDownloadItem(GalleryDownloadInfo gallery) async {
-    bool confirmed = await confirmDestructiveAction(title: 'reDownload'.tr + '?');
+    bool confirmed = await confirmDestructiveAction(
+      title: 'reDownload'.tr + '?',
+    );
     if (!confirmed) {
       return;
     }
@@ -151,70 +166,131 @@ mixin GalleryDownloadPageLogicMixin on GetxController
   }
 
   Future<void> goToReadPage(GalleryDownloadInfo gallery) async {
-    if (readSetting.useThirdPartyViewer.isTrue && readSetting.thirdPartyViewerPath.value != null) {
-      openThirdPartyViewer(DownloadPathResolver.computeGalleryDownloadAbsolutePath(gallery.toGalleryDownloadedData()));
-    } else {
-      int readIndexRecord = await readProgressService.getReadProgress(gallery.gid);
-
-      /// Ensure the gallery's image list is resident before entering read
-      /// page — ReadPageState's constructor reads [imageAtSync] synchronously
-      /// to build the initial snapshot. If images has been evicted (gallery
-      /// was fully downloaded), this reloads from DB.
-      await galleryDownloadService.galleryDownloadInfos[gallery.gid]!.ensureImagesLoaded();
-
-      ReadDirection? readDirection = isWebtoonGalleryFromTagString(gallery.tags) ? ReadDirection.top2bottomList : null;
-
-      toRoute(
-        Routes.read,
-        arguments: ReadPageInfo(
-          mode: ReadMode.downloaded,
-          gid: gallery.gid,
-          token: gallery.token,
-          galleryTitle: gallery.title,
-          galleryUrl: gallery.galleryUrl,
-          initialIndex: readIndexRecord,
-          readProgressRecordStorageKey: gallery.gid.toString(),
-          pageCount: gallery.pageCount,
-          useSuperResolution: superResolutionService.get(gallery.gid, SuperResolutionType.gallery) != null,
-          readDirection: readDirection,
-        ),
-      );
+    final completedCopyId = await downloadService.ensureContentCopy(
+      gallery.gid,
+    );
+    if (completedCopyId != null) {
+      await _openContentCopy(completedCopyId, gallery);
+      return;
     }
+    final currentCopyId = await localContentService.currentCopyId(
+      gallery.gid,
+      gallery.downloadOriginalImage ? 'original' : 'resampled',
+    );
+    // A full redownload builds a new directory before it becomes current.
+    // Keep the previous completed copy readable during that window.
+    if (currentCopyId != null &&
+        currentCopyId != gallery.copyId &&
+        await localContentService.completedInput(currentCopyId) != null) {
+      final readIndexRecord = await readProgressService.getReadProgress(
+        gallery.gid,
+      );
+      final info = await localContentService.readPageInfoForCopy(
+        currentCopyId,
+        initialIndex: readIndexRecord,
+      );
+      info.readProgressRecordStorageKey = gallery.gid.toString();
+      toRoute(Routes.read, arguments: info);
+      return;
+    }
+    int readIndexRecord = await readProgressService.getReadProgress(
+      gallery.gid,
+    );
+
+    /// Ensure the gallery's image list is resident before entering read
+    /// page — ReadPageState's constructor reads [imageAtSync] synchronously
+    /// to build the initial snapshot. If images has been evicted (gallery
+    /// was fully downloaded), this reloads from DB.
+    await galleryDownloadService.galleryDownloadInfos[gallery.gid]!
+        .ensureImagesLoaded();
+
+    ReadDirection? readDirection = isWebtoonGalleryFromTagString(gallery.tags)
+        ? ReadDirection.top2bottomList
+        : null;
+
+    toRoute(
+      Routes.read,
+      arguments: ReadPageInfo(
+        mode: ReadMode.downloaded,
+        gid: gallery.gid,
+        token: gallery.token,
+        galleryTitle: gallery.title,
+        galleryUrl: gallery.galleryUrl,
+        initialIndex: readIndexRecord,
+        readProgressRecordStorageKey: gallery.gid.toString(),
+        pageCount: gallery.pageCount,
+        readDirection: readDirection,
+      ),
+    );
   }
 
-  void showBottomSheet(GalleryDownloadInfo gallery, BuildContext context, {Offset? position}) {
+  Future<void> _openContentCopy(
+    String copyId,
+    GalleryDownloadInfo gallery,
+  ) async {
+    final info = await localContentService.readPageInfoForCopy(
+      copyId,
+      initialIndex: await readProgressService.getReadProgress(gallery.gid),
+    );
+    info.readDirection = isWebtoonGalleryFromTagString(gallery.tags)
+        ? ReadDirection.top2bottomList
+        : null;
+    toRoute(Routes.read, arguments: info);
+  }
+
+  Future<String?> _copyForCloud(int gid) async {
+    final gallery = downloadService.galleryDownloadInfos[gid];
+    if (gallery == null) return null;
+    final completed = await downloadService.ensureContentCopy(gid);
+    if (completed != null) return completed;
+    return localContentService.ensureCopy(
+      gid: gid,
+      representation: gallery.downloadOriginalImage ? 'original' : 'resampled',
+      rootPath: DownloadPathResolver.computeGalleryDownloadAbsolutePath(
+        gallery.toGalleryDownloadedData(),
+      ),
+      makeCurrent: false,
+    );
+  }
+
+  Future<void> handleCloudUpload(
+    GalleryDownloadInfo item, {
+    bool cleanup = false,
+  }) => queueCloudUploads([
+    () => _copyForCloud(item.gid),
+  ], cleanupAfterUpload: cleanup);
+
+  Future<void> handleMultiCloudUpload({bool cleanup = false}) async {
+    final gids = multiSelectDownloadPageState.selectedGids.toList();
+    await queueCloudUploads(
+      gids.map(
+        (gid) =>
+            () => _copyForCloud(gid),
+      ),
+      cleanupAfterUpload: cleanup,
+    );
+    exitSelectMode();
+  }
+
+  void showBottomSheet(
+    GalleryDownloadInfo gallery,
+    BuildContext context, {
+    Offset? position,
+  }) {
     showEHContextMenu(
       context,
       position: position,
       actions: [
-        if (superResolutionSetting.modelDirectoryPath.value != null &&
-            downloadService.galleryDownloadInfos[gallery.gid]?.downloadProgress.downloadStatus == DownloadStatus.downloaded &&
-            (superResolutionService.get(gallery.gid, SuperResolutionType.gallery) == null ||
-                superResolutionService.get(gallery.gid, SuperResolutionType.gallery)?.status == SuperResolutionStatus.paused))
+        ...[
           EHContextMenuAction(
-            text: 'superResolution'.tr,
-            onTap: () async {
-              if (superResolutionService.get(gallery.gid, SuperResolutionType.gallery) == null && gallery.downloadOriginalImage) {
-                bool? result = await Get.dialog(EHDialog(title: 'attention'.tr + '!', content: 'superResolveOriginalImageHint'.tr));
-                if (result != true) {
-                  return;
-                }
-              }
-
-              superResolutionService.superResolve(gallery.gid, SuperResolutionType.gallery);
-            },
+            text: 'cloudUpload'.tr,
+            onTap: () => handleCloudUpload(gallery),
           ),
-        if (superResolutionService.get(gallery.gid, SuperResolutionType.gallery)?.status == SuperResolutionStatus.running)
           EHContextMenuAction(
-            text: 'stopSuperResolution'.tr,
-            onTap: () => superResolutionService.pauseSuperResolve(gallery.gid, SuperResolutionType.gallery).then((_) => toast("success".tr)),
+            text: 'cloudUploadAndClean'.tr,
+            onTap: () => handleCloudUpload(gallery, cleanup: true),
           ),
-        if (superResolutionService.get(gallery.gid, SuperResolutionType.gallery)?.status == SuperResolutionStatus.paused ||
-            superResolutionService.get(gallery.gid, SuperResolutionType.gallery)?.status == SuperResolutionStatus.success)
-          EHContextMenuAction(
-            text: 'deleteSuperResolvedImage'.tr,
-            onTap: () => superResolutionService.deleteSuperResolve(gallery.gid, SuperResolutionType.gallery).then((_) => toast("success".tr)),
-          ),
+        ],
         EHContextMenuAction(
           text: 'changeGroup'.tr,
           onTap: () => handleChangeGroup(gallery),
@@ -241,31 +317,44 @@ mixin GalleryDownloadPageLogicMixin on GetxController
     );
   }
 
-  void showPrioritySheet(GalleryDownloadInfo gallery, BuildContext context, {Offset? position}) {
+  void showPrioritySheet(
+    GalleryDownloadInfo gallery,
+    BuildContext context, {
+    Offset? position,
+  }) {
     showEHContextMenu(
       context,
       position: position,
       actions: [
         EHContextMenuAction(
           text: '${'priority'.tr} : 1 (${'highest'.tr})',
-          isDefault: downloadService.galleryDownloadInfos[gallery.gid]?.priority == 1,
+          isDefault:
+              downloadService.galleryDownloadInfos[gallery.gid]?.priority == 1,
           onTap: () => handleAssignPriority(gallery, 1),
         ),
         ...[2, 3]
-            .map((i) => EHContextMenuAction(
-                  text: '${'priority'.tr} : $i',
-                  isDefault: downloadService.galleryDownloadInfos[gallery.gid]?.priority == i,
-                  onTap: () => handleAssignPriority(gallery, i),
-                ))
+            .map(
+              (i) => EHContextMenuAction(
+                text: '${'priority'.tr} : $i',
+                isDefault:
+                    downloadService
+                        .galleryDownloadInfos[gallery.gid]
+                        ?.priority ==
+                    i,
+                onTap: () => handleAssignPriority(gallery, i),
+              ),
+            )
             .toList(),
         EHContextMenuAction(
           text: '${'priority'.tr} : 4 (${'default'.tr})',
-          isDefault: downloadService.galleryDownloadInfos[gallery.gid]?.priority == 4,
+          isDefault:
+              downloadService.galleryDownloadInfos[gallery.gid]?.priority == 4,
           onTap: () => handleAssignPriority(gallery, 4),
         ),
         EHContextMenuAction(
           text: '${'priority'.tr} : 5',
-          isDefault: downloadService.galleryDownloadInfos[gallery.gid]?.priority == 5,
+          isDefault:
+              downloadService.galleryDownloadInfos[gallery.gid]?.priority == 5,
           onTap: () => handleAssignPriority(gallery, 5),
         ),
       ],
@@ -326,12 +415,18 @@ mixin GalleryDownloadPageLogicMixin on GetxController
   }
 
   Future<void> handleMultiDelete() async {
-    bool isUpdatingDependent = multiSelectDownloadPageState.selectedGids.any(downloadService.isUpdatingDependent);
+    bool isUpdatingDependent = multiSelectDownloadPageState.selectedGids.any(
+      downloadService.isUpdatingDependent,
+    );
 
     bool? result = await Get.dialog(
       EHDialog(
         title: 'delete'.tr,
-        content: 'multiDeleteHint'.tr + (isUpdatingDependent ? '\n\n' + 'deleteUpdatingDependentHint'.tr : ''),
+        content:
+            'multiDeleteHint'.tr +
+            (isUpdatingDependent
+                ? '\n\n' + 'deleteUpdatingDependentHint'.tr
+                : ''),
       ),
     );
 

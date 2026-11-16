@@ -110,6 +110,7 @@ class HorizontalDoubleColumnLayout extends BaseLayout {
 
   @override
   Widget? completedWidgetBuilderCallBack(int index, ExtendedImageState state) {
+    readPageLogic.captureImageSourceInfo(index, state);
     if (state.extendedImageInfo == null || logic.readPageState.imageContainerSizes[index] != null) {
       return null;
     }
@@ -143,6 +144,7 @@ class HorizontalDoubleColumnLayout extends BaseLayout {
 
   @override
   Widget? completedWidgetBuilderForLocalModeCallBack(int index, ExtendedImageState state) {
+    readPageLogic.captureImageSourceInfo(index, state);
     if (state.extendedImageInfo == null || logic.readPageState.imageContainerSizes[index] != null) {
       return null;
     }

@@ -9,6 +9,7 @@ import 'package:jhentai/src/service/log.dart';
 import 'package:path/path.dart';
 
 import '../service/jh_service.dart';
+import '../utils/legacy_storage_path.dart';
 import '../utils/toast_util.dart';
 
 DownloadSetting downloadSetting = DownloadSetting();
@@ -41,6 +42,19 @@ class DownloadSetting with JHLifeCircleBeanWithConfigStorage implements JHLifeCi
   @override
   void applyBeanConfig(String configString) {
     Map map = jsonDecode(configString);
+
+    if (GetPlatform.isAndroid) {
+      final currentStorageRoot = pathService.getVisibleDir().path;
+      for (final key in ['downloadPath', 'singleImageSavePath']) {
+        if (map[key] is String) {
+          map[key] = restoreLegacyAndroidStoragePath(map[key], currentStorageRoot);
+        }
+      }
+      if (map['extraGalleryScanPath'] is List) {
+        map['extraGalleryScanPath'] =
+            (map['extraGalleryScanPath'] as List).cast<String>().map((value) => restoreLegacyAndroidStoragePath(value, currentStorageRoot)).toList();
+      }
+    }
 
     if (!GetPlatform.isIOS) {
       downloadPath.value = map['downloadPath'] ?? downloadPath.value;
@@ -102,7 +116,7 @@ class DownloadSetting with JHLifeCircleBeanWithConfigStorage implements JHLifeCi
     defaultExtraGalleryScanPath = join(pathService.getVisibleDir().path, 'local_gallery');
     extraGalleryScanPath = <String>[defaultExtraGalleryScanPath].obs;
     singleImageSavePath = join(pathService.getVisibleDir().path, 'save').obs;
-    tempDownloadPath = join(pathService.tempDir.path, EHConsts.appName).obs;
+    tempDownloadPath = join(pathService.tempDir.path, EHConsts.tempDownloadDirectoryName).obs;
 
     await _ensureDownloadDirExists();
     await _clearTempDownloadPath();
@@ -194,7 +208,7 @@ class DownloadSetting with JHLifeCircleBeanWithConfigStorage implements JHLifeCi
     downloadAllGalleriesOfSamePriority.value = value;
     await saveBeanConfig();
   }
-  
+
   Future<void> saveUseJH2UpdateGallery(bool value) async {
     log.debug('saveUseJH2UpdateGallery:$value');
     useJH2UpdateGallery.value = value;

@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:animate_do/animate_do.dart';
 import 'package:blur/blur.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/extension/string_extension.dart';
 import 'package:jhentai/src/extension/widget_extension.dart';
@@ -16,6 +15,7 @@ import '../consts/locale_consts.dart';
 import '../model/gallery.dart';
 import '../model/gallery_tag.dart';
 import 'eh_gallery_category_tag.dart';
+import 'eh_gallery_card_content.dart';
 import 'eh_gallery_list_card_.dart';
 import 'eh_image.dart';
 
@@ -41,8 +41,13 @@ class EHGalleryWaterFlowCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => handleTapCard(gallery),
-      onLongPressStart: handleLongPressCard == null ? null : (details) => handleLongPressCard!(gallery, details.globalPosition),
-      onSecondaryTapDown: handleSecondaryTapCard == null ? null : (details) => handleSecondaryTapCard!(gallery, details.globalPosition),
+      onLongPressStart: handleLongPressCard == null
+          ? null
+          : (details) => handleLongPressCard!(gallery, details.globalPosition),
+      onSecondaryTapDown: handleSecondaryTapCard == null
+          ? null
+          : (details) =>
+                handleSecondaryTapCard!(gallery, details.globalPosition),
       child: FadeIn(child: _buildCard(context)),
     );
   }
@@ -52,8 +57,8 @@ class EHGalleryWaterFlowCard extends StatelessWidget {
       child: listMode == ListMode.waterfallFlowSmall
           ? _buildSmallCard(context)
           : listMode == ListMode.waterfallFlowMedium
-              ? _buildMediumCard(context)
-              : _buildBigCard(context),
+          ? _buildMediumCard(context)
+          : _buildBigCard(context),
     );
 
     if (gallery.blockedByLocalRules) {
@@ -65,8 +70,15 @@ class EHGalleryWaterFlowCard extends StatelessWidget {
         overlay: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.cancel_outlined, size: UIConfig.galleryCardFilteredIconSize, color: UIConfig.onBackGroundColor(context)),
-            Text('filtered'.tr, style: TextStyle(color: UIConfig.onBackGroundColor(context))),
+            Icon(
+              Icons.cancel_outlined,
+              size: UIConfig.galleryCardFilteredIconSize,
+              color: UIConfig.onBackGroundColor(context),
+            ),
+            Text(
+              'filtered'.tr,
+              style: TextStyle(color: UIConfig.onBackGroundColor(context)),
+            ),
           ],
         ),
       );
@@ -101,7 +113,8 @@ class EHGalleryWaterFlowCard extends StatelessWidget {
                 _buildRatingBar(context),
                 const Expanded(child: SizedBox()),
                 if (downloaded) _buildDownloadIcon().marginOnly(right: 2),
-                if (gallery.isFavorite) _buildFavoriteIcon().marginOnly(right: 2),
+                if (gallery.isFavorite)
+                  _buildFavoriteIcon().marginOnly(right: 2),
                 if (gallery.pageCount != null) _buildPageCount(),
               ],
             ),
@@ -125,16 +138,18 @@ class EHGalleryWaterFlowCard extends StatelessWidget {
                 _buildRatingBar(context),
                 const Expanded(child: SizedBox()),
                 if (downloaded) _buildDownloadIcon(),
-                if (gallery.isFavorite) _buildFavoriteIcon().marginOnly(left: 2),
+                if (gallery.isFavorite)
+                  _buildFavoriteIcon().marginOnly(left: 2),
                 _buildCategory().marginOnly(left: 4, right: 4),
-                if (gallery.language != null) _buildLanguage().marginOnly(right: 2),
+                if (gallery.language != null)
+                  _buildLanguage().marginOnly(right: 2),
                 if (gallery.pageCount != null) _buildPageCount(),
               ],
             ),
             _buildTitle().marginOnly(top: 4, left: 2),
             if (gallery.tags.isNotEmpty) _buildTags().marginOnly(top: 4),
           ],
-        ).paddingOnly(bottom: 6, left: 6, right: 6)
+        ).paddingOnly(bottom: 6, left: 6, right: 6),
       ],
     );
   }
@@ -149,7 +164,9 @@ class EHGalleryWaterFlowCard extends StatelessWidget {
             constraints.maxWidth,
             min(
               constraints.maxHeight,
-              listMode == ListMode.waterfallFlowBig ? UIConfig.waterFallFlowCardMaxHeightBig : UIConfig.waterFallFlowCardMaxHeightSmall,
+              listMode == ListMode.waterfallFlowBig
+                  ? UIConfig.waterFallFlowCardMaxHeightBig
+                  : UIConfig.waterFallFlowCardMaxHeightSmall,
             ),
           ),
         );
@@ -161,10 +178,24 @@ class EHGalleryWaterFlowCard extends StatelessWidget {
           containerColor: UIConfig.waterFallFlowCardBackGroundColor(context),
           heroTag: gallery.blockedByLocalRules ? null : gallery.cover,
           borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(listMode == ListMode.waterfallFlowBig ? 12 : 8),
-            topRight: Radius.circular(listMode == ListMode.waterfallFlowBig ? 12 : 8),
-            bottomLeft: Radius.circular(listMode == ListMode.waterfallFlowBig || listMode == ListMode.waterfallFlowMedium ? 0 : 8),
-            bottomRight: Radius.circular(listMode == ListMode.waterfallFlowBig || listMode == ListMode.waterfallFlowMedium ? 0 : 8),
+            topLeft: Radius.circular(
+              listMode == ListMode.waterfallFlowBig ? 12 : 8,
+            ),
+            topRight: Radius.circular(
+              listMode == ListMode.waterfallFlowBig ? 12 : 8,
+            ),
+            bottomLeft: Radius.circular(
+              listMode == ListMode.waterfallFlowBig ||
+                      listMode == ListMode.waterfallFlowMedium
+                  ? 0
+                  : 8,
+            ),
+            bottomRight: Radius.circular(
+              listMode == ListMode.waterfallFlowBig ||
+                      listMode == ListMode.waterfallFlowMedium
+                  ? 0
+                  : 8,
+            ),
           ),
         );
       },
@@ -173,13 +204,21 @@ class EHGalleryWaterFlowCard extends StatelessWidget {
 
   Widget _buildLanguageChip() {
     return Container(
-      decoration: BoxDecoration(color: UIConfig.galleryCategoryColor[gallery.category]!, borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: UIConfig.galleryCategoryColor[gallery.category]!,
+        borderRadius: BorderRadius.circular(12),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 4),
       constraints: const BoxConstraints(minWidth: 12),
       child: Center(
         child: Text(
           LocaleConsts.language2Abbreviation[gallery.language] ?? '',
-          style: TextStyle(fontSize: 9, color: UIConfig.waterFallFlowCardLanguageChipTextColor(UIConfig.galleryCategoryColor[gallery.category]!)),
+          style: TextStyle(
+            fontSize: 9,
+            color: UIConfig.waterFallFlowCardLanguageChipTextColor(
+              UIConfig.galleryCategoryColor[gallery.category]!,
+            ),
+          ),
         ),
       ),
     );
@@ -187,29 +226,37 @@ class EHGalleryWaterFlowCard extends StatelessWidget {
 
   Widget _buildDownloadIcon() => const Icon(Icons.download, size: 10);
 
-  Widget _buildFavoriteIcon() => Icon(Icons.favorite, size: 10, color: UIConfig.favoriteTagColor[gallery.favoriteTagIndex!]);
+  Widget _buildFavoriteIcon() => Icon(
+    Icons.favorite,
+    size: 10,
+    color: UIConfig.favoriteTagColor[gallery.favoriteTagIndex!],
+  );
 
-  Widget _buildPageCount() => Text(gallery.pageCount.toString() + 'P', style: const TextStyle(fontSize: 9));
+  Widget _buildPageCount() => Text(
+    gallery.pageCount.toString() + 'P',
+    style: const TextStyle(fontSize: 9),
+  );
 
-  Widget _buildLanguage() => Text(LocaleConsts.language2Abbreviation[gallery.language] ?? '', style: const TextStyle(fontSize: 9));
+  Widget _buildLanguage() => Text(
+    LocaleConsts.language2Abbreviation[gallery.language] ?? '',
+    style: const TextStyle(fontSize: 9),
+  );
 
   Widget _buildRatingBar(BuildContext context) {
-    return RatingBar.builder(
-      unratedColor: UIConfig.galleryRatingStarUnRatedColor(context),
-      initialRating: gallery.rating,
-      itemCount: 5,
-      allowHalfRating: true,
-      itemSize: 11,
-      ignoreGestures: true,
-      itemBuilder: (context, _) => Icon(Icons.star, color: gallery.hasRated ? UIConfig.galleryRatingStarRatedColor(context) : UIConfig.galleryRatingStarColor),
-      onRatingUpdate: (_) {},
+    return EHGalleryCardRating(
+      rating: gallery.rating,
+      hasRated: gallery.hasRated,
+      size: 11,
     );
   }
 
   Widget _buildCategory() {
     return EHGalleryCategoryTag(
       category: gallery.category,
-      textStyle: const TextStyle(fontSize: 8, color: UIConfig.galleryCategoryTagTextColor),
+      textStyle: const TextStyle(
+        fontSize: 8,
+        color: UIConfig.galleryCategoryTagTextColor,
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
     );
   }
@@ -219,7 +266,10 @@ class EHGalleryWaterFlowCard extends StatelessWidget {
       gallery.title.breakWord,
       maxLines: 3,
       overflow: TextOverflow.ellipsis,
-      style: const TextStyle(fontSize: UIConfig.waterFallFlowCardTitleSize, height: 1.2),
+      style: const TextStyle(
+        fontSize: UIConfig.waterFallFlowCardTitleSize,
+        height: 1.2,
+      ),
     );
   }
 
@@ -231,7 +281,8 @@ class EHGalleryWaterFlowCard extends StatelessWidget {
 class WaterFallFlowCardTagWaterFlow extends StatelessWidget {
   final LinkedHashMap<String, List<GalleryTag>> tags;
 
-  const WaterFallFlowCardTagWaterFlow({Key? key, required this.tags}) : super(key: key);
+  const WaterFallFlowCardTagWaterFlow({Key? key, required this.tags})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -240,26 +291,29 @@ class WaterFallFlowCardTagWaterFlow extends StatelessWidget {
       mergedList.addAll(galleryTags);
     });
 
-    return LayoutBuilder(builder: (_, constraints) {
-      int computeRows = _computeRows(mergedList, constraints.maxWidth);
-      return SizedBox(
-        height: UIConfig.waterFallFlowCardTagsMaxHeight * computeRows,
-        child: WaterfallFlow.builder(
-          scrollDirection: Axis.horizontal,
-          shrinkWrap: true,
+    return LayoutBuilder(
+      builder: (_, constraints) {
+        int computeRows = _computeRows(mergedList, constraints.maxWidth);
+        return SizedBox(
+          height: UIConfig.waterFallFlowCardTagsMaxHeight * computeRows,
+          child: WaterfallFlow.builder(
+            scrollDirection: Axis.horizontal,
+            shrinkWrap: true,
 
-          /// disable keepScrollOffset because we used [PageStorageKey], which leads to a conflict with this WaterfallFlow
-          controller: ScrollController(keepScrollOffset: false),
-          gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-            crossAxisCount: computeRows,
-            mainAxisSpacing: 4,
-            crossAxisSpacing: 4,
-          ),
-          itemCount: mergedList.length,
-          itemBuilder: (_, int index) => WaterFallFlowTag(galleryTag: mergedList[index]),
-        ).enableMouseDrag(withScrollBar: false),
-      );
-    });
+            /// disable keepScrollOffset because we used [PageStorageKey], which leads to a conflict with this WaterfallFlow
+            controller: ScrollController(keepScrollOffset: false),
+            gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
+              crossAxisCount: computeRows,
+              mainAxisSpacing: 4,
+              crossAxisSpacing: 4,
+            ),
+            itemCount: mergedList.length,
+            itemBuilder: (_, int index) =>
+                WaterFallFlowTag(galleryTag: mergedList[index]),
+          ).enableMouseDrag(withScrollBar: false),
+        );
+      },
+    );
   }
 
   int _computeRows(List<GalleryTag> mergedList, double maxWidth) {
@@ -268,7 +322,8 @@ class WaterFallFlowCardTagWaterFlow extends StatelessWidget {
 }
 
 class WaterFallFlowTag extends StatelessWidget {
-  const WaterFallFlowTag({Key? key, required this.galleryTag}) : super(key: key);
+  const WaterFallFlowTag({Key? key, required this.galleryTag})
+    : super(key: key);
 
   final GalleryTag galleryTag;
 
@@ -277,7 +332,9 @@ class WaterFallFlowTag extends StatelessWidget {
     return Container(
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: galleryTag.backgroundColor ?? UIConfig.ehTagBackGroundColor(context),
+        color:
+            galleryTag.backgroundColor ??
+            UIConfig.ehTagBackGroundColor(context),
         borderRadius: BorderRadius.circular(6),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 4),

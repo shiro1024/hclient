@@ -209,6 +209,7 @@ class HorizontalDoubleColumnLayoutLogic extends BaseLayoutLogic {
     int currentImageIndex = 0;
     int currentPageIndex = 0;
     bool hasLeftColumn = false;
+
     /// Extends displayFirstPageAlone to apply after each spread, not just the cover.
     bool nextIsAlone = readPageState.displayFirstPageAlone;
 

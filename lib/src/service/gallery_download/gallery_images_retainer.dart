@@ -4,7 +4,7 @@ import 'gallery_download_service.dart';
 
 /// Mixin for [GetxController]s that need synchronous access to a gallery's
 /// full [GalleryDownloadInfo.images] list (read page, details page,
-/// thumbnails page, super-resolution, etc.).
+/// thumbnails page, etc.).
 ///
 /// Calling [retainGalleryImages] increments the gallery's refcount so the
 /// list stays resident — even if the download completes mid-consumption,
@@ -50,7 +50,7 @@ mixin GalleryImagesRetainer on GetxController {
   ///
   /// The owner label passed to [GalleryDownloadInfo.retainImages] is this
   /// controller's [runtimeType], so evict-block logs name the concrete
-  /// consumer (e.g. `ReadPageLogic`, `SuperResolutionService`).
+  /// consumer (e.g. `ReadPageLogic`).
   ///
   /// Returns false if the gallery is not in the download service (never
   /// downloaded / deleted) — caller should handle by skipping sync reads.

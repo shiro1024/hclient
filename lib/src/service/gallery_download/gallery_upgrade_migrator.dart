@@ -1,6 +1,6 @@
 part of 'gallery_download_service.dart';
 
-/// Handles copying image data (bytes + metadata + super-resolution info) from
+/// Handles copying image data (bytes + metadata) from
 /// an old gallery version to a new one during a gallery update. Locates
 /// matching images by [imageHash] and reuses their downloaded bytes instead of
 /// re-downloading.
@@ -17,8 +17,13 @@ class _GalleryUpgradeMigrator {
   /// [fetchImageHashes] returns. Iterates all serialNos; for each, finds the
   /// matching old image (by hash), copies bytes, and marks the new image as
   /// downloaded.
-  Future<void> copyImageInfosFromImageHashes(GalleryDownloadInfo newGallery, List<String> imageHashes) async {
-    GalleryDownloadInfo? oldGallery = _service.galleries.firstWhereOrNull((e) => e.galleryUrl == newGallery.oldVersionGalleryUrl);
+  Future<void> copyImageInfosFromImageHashes(
+    GalleryDownloadInfo newGallery,
+    List<String> imageHashes,
+  ) async {
+    GalleryDownloadInfo? oldGallery = _service.galleries.firstWhereOrNull(
+      (e) => e.galleryUrl == newGallery.oldVersionGalleryUrl,
+    );
     if (oldGallery == null) {
       return;
     }
@@ -33,11 +38,14 @@ class _GalleryUpgradeMigrator {
         break;
       }
 
-      if (newGallery.imageAtSync(serialNo)?.downloadStatus == DownloadStatus.downloaded) {
+      if (newGallery.imageAtSync(serialNo)?.downloadStatus ==
+          DownloadStatus.downloaded) {
         continue;
       }
 
-      int? oldImageSerialNo = oldGallery.images?.firstIndexWhereOrNull((e) => e?.imageHash == imageHashes[serialNo]);
+      int? oldImageSerialNo = oldGallery.images?.firstIndexWhereOrNull(
+        (e) => e?.imageHash == imageHashes[serialNo],
+      );
       if (oldImageSerialNo == null) {
         continue;
       }
@@ -51,26 +59,54 @@ class _GalleryUpgradeMigrator {
       /// have `downloadOriginalImage=true` and stored `fullimg.php`→`jpg` on
       /// disk; we must use the same URL when recomputing the path for the new
       /// gallery so the extension matches.
-      final String oldDownloadUrl = _downloadUrlFor(oldGallery.toGalleryDownloadedData(), oldImage);
+      final String oldDownloadUrl = _downloadUrlFor(
+        oldGallery.toGalleryDownloadedData(),
+        oldImage,
+      );
       GalleryImage newImage = oldImage.copyWith(
-        path: DownloadPathResolver.computeImageDownloadRelativePath(newGallery.toGalleryDownloadedData(), oldDownloadUrl, serialNo),
+        path: DownloadPathResolver.computeImageDownloadRelativePath(
+          newGallery.toGalleryDownloadedData(),
+          oldDownloadUrl,
+          serialNo,
+        ),
         downloadStatus: DownloadStatus.downloaded,
       );
 
-      log.download('Copy old image, new serialNo: $serialNo');
-      io.File oldFile = io.File(path.join(pathService.getVisibleDir().path, oldImage.path!));
-      await oldFile.copy(path.join(pathService.getVisibleDir().path, newImage.path!));
+      final copied = await _copyOldPage(
+        oldGallery,
+        oldImageSerialNo,
+        newImage.path!,
+      );
+      if (copied == null) continue;
 
       if (newGallery.imageAtSync(serialNo) == null) {
-        await _service._saveNewImageInfoInDatabase(newImage, serialNo, newGallery.gid);
+        await _service._saveNewImageInfoInDatabase(
+          newImage,
+          serialNo,
+          newGallery.gid,
+        );
         newGallery.upsertImage(serialNo, newImage);
       } else {
-        await _service._updateImageStatus(newGallery, newImage, serialNo, DownloadStatus.downloaded);
+        await _service._updateImageStatus(
+          newGallery,
+          newImage,
+          serialNo,
+          DownloadStatus.downloaded,
+        );
       }
 
+      await _service._recordDownloadedPage(
+        newGallery,
+        newImage,
+        serialNo,
+        rawHash: copied.hash,
+        rawLength: copied.length,
+        mime: copied.mime,
+        codecProfile: copied.codecProfile,
+        objectHash: copied.objectHash,
+        storedLength: copied.storedLength,
+      );
       await _service._updateProgressAfterImageDownloaded(newGallery, serialNo);
-
-      await superResolutionService.copyImageInfo(oldGallery.toGalleryDownloadedData(), newGallery.toGalleryDownloadedData(), oldImageSerialNo, serialNo);
     }
 
     _service._saveGalleryMetadataInDisk(newGallery);
@@ -79,8 +115,13 @@ class _GalleryUpgradeMigrator {
   /// Try to copy a single image's info using its href's originImageHash.
   /// Called from [parseImageUrlTask] before parsing the image URL — if the
   /// old gallery has a matching image, we skip the parse entirely.
-  Future<void> tryCopyImageInfoFromHref(String oldVersionGalleryUrl, GalleryDownloadInfo newGallery, int newImageSerialNo) {
-    final String? newImageHash = newGallery.imageHrefs[newImageSerialNo]!.originImageHash;
+  Future<void> tryCopyImageInfoFromHref(
+    String oldVersionGalleryUrl,
+    GalleryDownloadInfo newGallery,
+    int newImageSerialNo,
+  ) {
+    final String? newImageHash =
+        newGallery.imageHrefs[newImageSerialNo]!.originImageHash;
     return _tryCopyImageInfo(
       oldVersionGalleryUrl: oldVersionGalleryUrl,
       newGallery: newGallery,
@@ -94,7 +135,11 @@ class _GalleryUpgradeMigrator {
   /// If two images' [imageHash] is equal, they are the same image.
   /// Called from [downloadImageTask] after parsing the image URL — if the
   /// old gallery has a matching image, we skip the download entirely.
-  Future<void> tryCopyImageInfoFromImage(String oldVersionGalleryUrl, GalleryDownloadInfo newGallery, int newImageSerialNo) {
+  Future<void> tryCopyImageInfoFromImage(
+    String oldVersionGalleryUrl,
+    GalleryDownloadInfo newGallery,
+    int newImageSerialNo,
+  ) {
     final String? hash = newGallery.imageAtSync(newImageSerialNo)?.imageHash;
     if (hash == null) {
       return Future.value();
@@ -111,7 +156,7 @@ class _GalleryUpgradeMigrator {
   }
 
   /// Shared core: locate the matching old image by hash, optionally persist a fresh
-  /// [GalleryImage] row for the new gallery, then copy bytes + super-resolution info.
+  /// [GalleryImage] row for the new gallery, then copy bytes.
   Future<void> _tryCopyImageInfo({
     required String oldVersionGalleryUrl,
     required GalleryDownloadInfo newGallery,
@@ -123,7 +168,9 @@ class _GalleryUpgradeMigrator {
     if (newImageHash == null) {
       return;
     }
-    GalleryDownloadInfo? oldGallery = _service.galleries.firstWhereOrNull((e) => e.galleryUrl == oldVersionGalleryUrl);
+    GalleryDownloadInfo? oldGallery = _service.galleries.firstWhereOrNull(
+      (e) => e.galleryUrl == oldVersionGalleryUrl,
+    );
     if (oldGallery == null) {
       return;
     }
@@ -132,7 +179,9 @@ class _GalleryUpgradeMigrator {
     /// gallery's image list from DB before the sync reads below.
     await oldGallery.ensureImagesLoaded();
 
-    int? oldImageSerialNo = oldGallery.images?.firstIndexWhereOrNull((e) => e?.imageHash == newImageHash);
+    int? oldImageSerialNo = oldGallery.images?.firstIndexWhereOrNull(
+      (e) => e?.imageHash == newImageHash,
+    );
     if (oldImageSerialNo == null) {
       return;
     }
@@ -143,29 +192,142 @@ class _GalleryUpgradeMigrator {
     }
 
     if (preSaveNewImage) {
-      final String oldDownloadUrl = _downloadUrlFor(oldGallery.toGalleryDownloadedData(), oldImage);
+      final String oldDownloadUrl = _downloadUrlFor(
+        oldGallery.toGalleryDownloadedData(),
+        oldImage,
+      );
       GalleryImage newImage = oldImage.copyWith(
-        path: DownloadPathResolver.computeImageDownloadRelativePath(newGallery.toGalleryDownloadedData(), oldDownloadUrl, newImageSerialNo),
+        path: DownloadPathResolver.computeImageDownloadRelativePath(
+          newGallery.toGalleryDownloadedData(),
+          oldDownloadUrl,
+          newImageSerialNo,
+        ),
         downloadStatus: newImageDownloadStatus!,
       );
-      await _service._saveNewImageInfoInDatabase(newImage, newImageSerialNo, newGallery.gid);
+      await _service._saveNewImageInfoInDatabase(
+        newImage,
+        newImageSerialNo,
+        newGallery.gid,
+      );
       newGallery.upsertImage(newImageSerialNo, newImage);
     }
 
-    await _copyImageInfo(oldImage, newGallery, newImageSerialNo);
-    await superResolutionService.copyImageInfo(oldGallery.toGalleryDownloadedData(), newGallery.toGalleryDownloadedData(), oldImageSerialNo, newImageSerialNo);
+    await _copyImageInfo(
+      oldGallery,
+      oldImageSerialNo,
+      newGallery,
+      newImageSerialNo,
+    );
   }
 
-  Future<void> _copyImageInfo(GalleryImage oldImage, GalleryDownloadInfo newGallery, int newImageSerialNo) async {
+  Future<void> _copyImageInfo(
+    GalleryDownloadInfo oldGallery,
+    int oldImageSerialNo,
+    GalleryDownloadInfo newGallery,
+    int newImageSerialNo,
+  ) async {
     log.download('Copy old image, new serialNo: $newImageSerialNo');
 
     GalleryImage newImage = newGallery.imageAtSync(newImageSerialNo)!;
+    final copied = await _copyOldPage(
+      oldGallery,
+      oldImageSerialNo,
+      newImage.path!,
+    );
+    if (copied == null) return;
 
-    io.File oldFile = io.File(path.join(pathService.getVisibleDir().path, oldImage.path!));
-    await oldFile.copy(path.join(pathService.getVisibleDir().path, newImage.path!));
+    await _service._updateImageStatus(
+      newGallery,
+      newImage,
+      newImageSerialNo,
+      DownloadStatus.downloaded,
+    );
 
-    await _service._updateImageStatus(newGallery, newImage, newImageSerialNo, DownloadStatus.downloaded);
+    await _service._recordDownloadedPage(
+      newGallery,
+      newImage,
+      newImageSerialNo,
+      rawHash: copied.hash,
+      rawLength: copied.length,
+      mime: copied.mime,
+      codecProfile: copied.codecProfile,
+      objectHash: copied.objectHash,
+      storedLength: copied.storedLength,
+    );
 
-    await _service._updateProgressAfterImageDownloaded(newGallery, newImageSerialNo);
+    await _service._updateProgressAfterImageDownloaded(
+      newGallery,
+      newImageSerialNo,
+    );
+  }
+
+  /// Keep the source page identity, bytes, and destination copy under one
+  /// lease. A concurrent replacement can only commit after this copy ends.
+  Future<
+    ({
+      String hash,
+      int length,
+      String? mime,
+      String? codecProfile,
+      String? objectHash,
+      int? storedLength,
+    })?
+  >
+  _copyOldPage(
+    GalleryDownloadInfo oldGallery,
+    int oldOrdinal,
+    String destinationRelativePath,
+  ) async {
+    final sourceRoot = DownloadPathResolver.computeGalleryDownloadAbsolutePath(
+      oldGallery.toGalleryDownloadedData(),
+    );
+    final copyId = await localContentService.copyIdForRoot(sourceRoot);
+    if (copyId == null) return null;
+    final destination = io.File(
+      path.join(pathService.getVisibleDir().path, destinationRelativePath),
+    );
+    return localContentService.withResidentPageInput(copyId, oldOrdinal, (
+      source,
+      page,
+    ) async {
+      if (!await source.exists()) return null;
+      await destination.parent.create(recursive: true);
+      if (page.rawHash case final knownHash?) {
+        await source.copy(destination.path);
+        return (
+          hash: knownHash,
+          length: page.rawLength ?? await destination.length(),
+          mime: page.mime,
+          codecProfile: page.codecProfile,
+          objectHash: page.objectHash,
+          storedLength: page.storedLength,
+        );
+      }
+      final output = destination.openWrite();
+      var length = 0;
+      try {
+        final digest = await sha256
+            .bind(
+              source.openRead().map((chunk) {
+                length += chunk.length;
+                output.add(chunk);
+                return chunk;
+              }),
+            )
+            .first;
+        await output.close();
+        return (
+          hash: digest.toString(),
+          length: length,
+          mime: page.mime,
+          codecProfile: page.codecProfile,
+          objectHash: page.objectHash,
+          storedLength: page.storedLength,
+        );
+      } catch (_) {
+        await output.close();
+        rethrow;
+      }
+    });
   }
 }

@@ -79,7 +79,4 @@ class GalleryDao {
     return (appDb.delete(appDb.galleryDownloaded)..where((gallery) => gallery.gid.equals(gid))).go();
   }
 
-  static Future<List<GalleryDownloadedOldData>> selectOldGalleries() {
-    return (appDb.select(appDb.galleryDownloadedOld)..orderBy([(gallery) => OrderingTerm(expression: gallery.insertTime)])).get();
-  }
 }

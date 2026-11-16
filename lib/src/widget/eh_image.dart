@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:animate_do/animate_do.dart';
 import 'package:extended_image/extended_image.dart';
 
 // ignore: implementation_imports
-import 'package:extended_image_library/src/network/network_image_io.dart' as network_image_io;
+import 'package:extended_image_library/src/network/network_image_io.dart'
+    as network_image_io;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -14,12 +16,15 @@ import 'package:jhentai/src/extension/widget_extension.dart';
 import 'package:jhentai/src/model/gallery_image.dart';
 import 'package:jhentai/src/setting/advanced_setting.dart';
 import 'package:jhentai/src/setting/style_setting.dart';
+
 import 'dart:io' as io;
 
 import 'dart:ui' as ui;
 
 import '../service/gallery_download/download_path_resolver.dart';
 import '../service/gallery_download/gallery_download_service.dart';
+import '../service/local_content_service.dart';
+import '../model/image_source_info.dart';
 
 typedef LoadingProgressWidgetBuilder = Widget Function(double);
 typedef FailedWidgetBuilder = Widget Function(ExtendedImageState state);
@@ -29,6 +34,13 @@ typedef LoadingWidgetBuilder = Widget Function();
 typedef CompletedWidgetBuilder = Widget? Function(ExtendedImageState state);
 
 class EHImage extends StatefulWidget {
+  /// The completer is also the ImageCache entry, so source facts survive a hot
+  /// cache hit without keeping the encoded bytes or a separate image cache.
+  static ImageSourceInfo? sourceInfoFor(ExtendedImageState state) {
+    final key = state.imageStreamKey;
+    return key == null ? null : _sourceFacts[key]?.info;
+  }
+
   final GalleryImage galleryImage;
   final bool autoLayout;
   final double? containerHeight;
@@ -117,14 +129,23 @@ class _EHImageState extends State<EHImage> {
   // so a per-widget gate would be left permanently paused when its widget is
   // disposed while the codec is parked on it, freezing the animation even
   // after the image scrolls back into view.
-  late final EHImageAnimationGate _gate = EHImageAnimationGateRegistry.gateFor(_imageKey);
+  late final EHImageAnimationGate _gate = EHImageAnimationGateRegistry.gateFor(
+    _imageKey,
+  );
 
-  String get _imageKey => widget.galleryImage.path ?? widget.galleryImage.url;
+  String get _imageKey {
+    final managed = widget.galleryImage.managedPage;
+    return managed == null
+        ? widget.galleryImage.path ?? widget.galleryImage.url
+        : '${managed.copyId}/${managed.ordinal}/${managed.rawHash}';
+  }
 
   @override
   void initState() {
     super.initState();
-    if (widget.animateOnlyWhenVisible && !widget.disableAnimation && _canBeAnimated) {
+    if (widget.animateOnlyWhenVisible &&
+        !widget.disableAnimation &&
+        _canBeAnimated) {
       _startVisibilityCheck();
     }
   }
@@ -156,10 +177,15 @@ class _EHImageState extends State<EHImage> {
 
   bool _isVisible() {
     final RenderObject? renderObject = context.findRenderObject();
-    if (renderObject == null || !renderObject.attached || renderObject is! RenderBox || !renderObject.hasSize) {
+    if (renderObject == null ||
+        !renderObject.attached ||
+        renderObject is! RenderBox ||
+        !renderObject.hasSize) {
       return true;
     }
-    final RenderAbstractViewport? viewport = RenderAbstractViewport.maybeOf(renderObject);
+    final RenderAbstractViewport? viewport = RenderAbstractViewport.maybeOf(
+      renderObject,
+    );
     if (viewport == null || viewport is! RenderBox) {
       return true;
     }
@@ -175,9 +201,10 @@ class _EHImageState extends State<EHImage> {
   Widget build(BuildContext context) {
     Widget child = advancedSetting.inNoImageMode.isTrue
         ? const SizedBox()
-        : widget.galleryImage.path == null
-            ? buildNetworkImage(context)
-            : buildFileImage(context);
+        : widget.galleryImage.path == null &&
+              widget.galleryImage.managedPage == null
+        ? buildNetworkImage(context)
+        : buildFileImage(context);
 
     if (widget.heroTag != null && styleSetting.isInMobileLayout) {
       child = Hero(tag: widget.heroTag!, child: child);
@@ -188,7 +215,10 @@ class _EHImageState extends State<EHImage> {
         builder: (_, constraints) => Container(
           height: constraints.maxHeight,
           width: constraints.maxWidth,
-          decoration: BoxDecoration(color: widget.containerColor, borderRadius: widget.borderRadius),
+          decoration: BoxDecoration(
+            color: widget.containerColor,
+            borderRadius: widget.borderRadius,
+          ),
           child: child,
         ),
       );
@@ -197,20 +227,33 @@ class _EHImageState extends State<EHImage> {
     return Container(
       height: widget.containerHeight,
       width: widget.containerWidth,
-      decoration: BoxDecoration(color: widget.containerColor, borderRadius: widget.borderRadius),
+      decoration: BoxDecoration(
+        color: widget.containerColor,
+        borderRadius: widget.borderRadius,
+      ),
       child: child,
     );
   }
 
   Widget buildNetworkImage(BuildContext context) {
     final String url = _replaceEXUrl(widget.galleryImage.url);
-    final bool useGate = widget.animateOnlyWhenVisible && !widget.disableAnimation;
+    final bool useGate =
+        widget.animateOnlyWhenVisible && !widget.disableAnimation;
 
     return ExtendedImage(
-      image: ExtendedResizeImage.resizeIfNeeded(
+      image: _SourceImageProvider(
         provider: useGate
-            ? _GateExtendedNetworkImageProvider(url, cache: true, printError: kDebugMode, gate: _gate)
-            : ExtendedNetworkImageProvider(url, cache: true, printError: kDebugMode),
+            ? _GateExtendedNetworkImageProvider(
+                url,
+                cache: true,
+                printError: kDebugMode,
+                gate: _gate,
+              )
+            : _ObservedNetworkImageProvider(
+                url,
+                cache: true,
+                printError: kDebugMode,
+              ),
         maxBytes: widget.maxBytes,
       ),
       fit: widget.fit,
@@ -224,34 +267,55 @@ class _EHImageState extends State<EHImage> {
         switch (state.extendedImageLoadState) {
           case LoadState.loading:
             return widget.loadingProgressWidgetBuilder != null
-                ? widget.loadingProgressWidgetBuilder!.call(_computeLoadingProgress(state.loadingProgress, state.extendedImageInfo))
+                ? widget.loadingProgressWidgetBuilder!.call(
+                    _computeLoadingProgress(
+                      state.loadingProgress,
+                      state.extendedImageInfo,
+                    ),
+                  )
                 : Center(child: UIConfig.loadingAnimation(context));
           case LoadState.failed:
             return widget.failedWidgetBuilder?.call(state) ??
                 Center(
-                  child: GestureDetector(child: const Icon(Icons.sentiment_very_dissatisfied), onTap: state.reLoadImage),
+                  child: GestureDetector(
+                    child: const Icon(Icons.sentiment_very_dissatisfied),
+                    onTap: state.reLoadImage,
+                  ),
                 );
           case LoadState.completed:
             state.returnLoadStateChangedWidget = true;
 
-            Widget child = widget.completedWidgetBuilder?.call(state) ?? _buildExtendedRawImage(state);
+            Widget child =
+                widget.completedWidgetBuilder?.call(state) ??
+                _buildExtendedRawImage(state);
 
             if (widget.borderRadius != BorderRadius.zero) {
-              child = ClipRRect(child: child, borderRadius: widget.borderRadius);
+              child = ClipRRect(
+                child: child,
+                borderRadius: widget.borderRadius,
+              );
             }
 
             if (state.slidePageState != null) {
-              child = ExtendedImageSlidePageHandler(child: child, extendedImageSlidePageState: state.slidePageState);
+              child = ExtendedImageSlidePageHandler(
+                child: child,
+                extendedImageSlidePageState: state.slidePageState,
+              );
             }
 
             child = Center(
               child: Container(
-                decoration: BoxDecoration(boxShadow: widget.shadows, borderRadius: widget.borderRadius),
+                decoration: BoxDecoration(
+                  boxShadow: widget.shadows,
+                  borderRadius: widget.borderRadius,
+                ),
                 child: child,
               ),
             );
 
-            return widget.forceFadeIn || !state.wasSynchronouslyLoaded ? child.fadeIn() : child;
+            return widget.forceFadeIn || !state.wasSynchronouslyLoaded
+                ? child.fadeIn()
+                : child;
         }
       },
     );
@@ -259,32 +323,66 @@ class _EHImageState extends State<EHImage> {
 
   Widget buildFileImage(BuildContext context) {
     if (widget.galleryImage.downloadStatus == DownloadStatus.paused) {
-      return widget.pausedWidgetBuilder?.call() ?? const Center(child: CircularProgressIndicator());
+      return widget.pausedWidgetBuilder?.call() ??
+          const Center(child: CircularProgressIndicator());
     }
 
     if (widget.galleryImage.downloadStatus == DownloadStatus.downloading) {
-      return widget.downloadingWidgetBuilder?.call() ?? const Center(child: CircularProgressIndicator());
+      return widget.downloadingWidgetBuilder?.call() ??
+          const Center(child: CircularProgressIndicator());
     }
 
-    final io.File file = io.File(DownloadPathResolver.computeImageDownloadAbsolutePathFromRelativePath(widget.galleryImage.path!));
-    final String lowerPath = widget.galleryImage.path!.toLowerCase();
-    final bool isAnimatedFile = lowerPath.endsWith('.webp') || lowerPath.endsWith('.gif');
+    final identity = widget.galleryImage.managedPage;
+    final io.File file = io.File(
+      identity == null
+          ? DownloadPathResolver.computeImageDownloadAbsolutePathFromRelativePath(
+              widget.galleryImage.path!,
+            )
+          : widget.galleryImage.path ??
+                '${identity.copyId}/${identity.ordinal}',
+    );
+    final managed = identity == null
+        ? localContentService.managedPageForPathSync(file.path)
+        : localContentService.currentManagedPageSync(identity);
+    final String lowerPath = widget.galleryImage.path?.toLowerCase() ?? '';
+    final bool isAnimatedFile =
+        lowerPath.endsWith('.webp') || lowerPath.endsWith('.gif');
 
     final ImageProvider provider;
-    if (widget.disableAnimation && isAnimatedFile) {
+    if (managed != null) {
+      provider = _ManagedFileImageProvider(
+        file,
+        managed,
+        singleFrame: widget.disableAnimation,
+        gate:
+            widget.animateOnlyWhenVisible &&
+                !widget.disableAnimation &&
+                isAnimatedFile
+            ? _gate
+            : null,
+      );
+    } else if (widget.disableAnimation && isAnimatedFile) {
       provider = _SingleFrameExtendedFileImageProvider(file);
-    } else if (widget.animateOnlyWhenVisible && !widget.disableAnimation && isAnimatedFile) {
+    } else if (widget.animateOnlyWhenVisible &&
+        !widget.disableAnimation &&
+        isAnimatedFile) {
       provider = _GateExtendedFileImageProvider(file, _gate);
     } else {
-      provider = ExtendedFileImageProvider(file);
+      provider = _ObservedFileImageProvider(file);
     }
 
     return ExtendedImage(
-      image: ExtendedResizeImage.resizeIfNeeded(provider: provider, maxBytes: widget.maxBytes),
+      image: _SourceImageProvider(
+        provider: provider,
+        maxBytes: widget.maxBytes,
+      ),
       fit: widget.fit,
       height: widget.containerHeight,
       width: widget.containerWidth,
-      enableLoadState: widget.loadingWidgetBuilder != null || widget.failedWidgetBuilder != null || widget.completedWidgetBuilder != null,
+      enableLoadState:
+          widget.loadingWidgetBuilder != null ||
+          widget.failedWidgetBuilder != null ||
+          widget.completedWidgetBuilder != null,
       enableSlideOutPage: widget.enableSlideOutPage,
       borderRadius: widget.borderRadius,
       shape: BoxShape.rectangle,
@@ -292,27 +390,40 @@ class _EHImageState extends State<EHImage> {
       loadStateChanged: (ExtendedImageState state) {
         switch (state.extendedImageLoadState) {
           case LoadState.loading:
-            return widget.loadingWidgetBuilder != null ? widget.loadingWidgetBuilder!.call() : Center(child: UIConfig.loadingAnimation(context));
+            return widget.loadingWidgetBuilder != null
+                ? widget.loadingWidgetBuilder!.call()
+                : Center(child: UIConfig.loadingAnimation(context));
           case LoadState.failed:
             return widget.failedWidgetBuilder?.call(state) ??
                 Center(
-                  child: GestureDetector(child: const Icon(Icons.sentiment_very_dissatisfied), onTap: state.reLoadImage),
+                  child: GestureDetector(
+                    child: const Icon(Icons.sentiment_very_dissatisfied),
+                    onTap: state.reLoadImage,
+                  ),
                 );
           case LoadState.completed:
             state.returnLoadStateChangedWidget = true;
 
-            Widget child = widget.completedWidgetBuilder?.call(state) ?? _buildExtendedRawImage(state);
+            Widget child =
+                widget.completedWidgetBuilder?.call(state) ??
+                _buildExtendedRawImage(state);
 
             child = ClipRRect(child: child, borderRadius: widget.borderRadius);
 
             if (state.slidePageState != null) {
-              child = ExtendedImageSlidePageHandler(child: child, extendedImageSlidePageState: state.slidePageState);
+              child = ExtendedImageSlidePageHandler(
+                child: child,
+                extendedImageSlidePageState: state.slidePageState,
+              );
             }
 
             return FadeIn(
               child: Center(
                 child: Container(
-                  decoration: BoxDecoration(boxShadow: widget.shadows, borderRadius: widget.borderRadius),
+                  decoration: BoxDecoration(
+                    boxShadow: widget.shadows,
+                    borderRadius: widget.borderRadius,
+                  ),
                   child: child,
                 ),
               ),
@@ -323,7 +434,10 @@ class _EHImageState extends State<EHImage> {
     );
   }
 
-  double _computeLoadingProgress(ImageChunkEvent? loadingProgress, ImageInfo? extendedImageInfo) {
+  double _computeLoadingProgress(
+    ImageChunkEvent? loadingProgress,
+    ImageInfo? extendedImageInfo,
+  ) {
     if (loadingProgress == null) {
       return 0.01;
     }
@@ -349,18 +463,198 @@ class _EHImageState extends State<EHImage> {
   Widget _buildExtendedRawImage(ExtendedImageState state) {
     FittedSizes fittedSizes = applyBoxFit(
       widget.fit,
-      Size(state.extendedImageInfo!.image.width.toDouble(), state.extendedImageInfo!.image.height.toDouble()),
-      Size(widget.containerWidth ?? double.infinity, widget.containerHeight ?? double.infinity),
+      Size(
+        state.extendedImageInfo!.image.width.toDouble(),
+        state.extendedImageInfo!.image.height.toDouble(),
+      ),
+      Size(
+        widget.containerWidth ?? double.infinity,
+        widget.containerHeight ?? double.infinity,
+      ),
     );
 
     return ExtendedRawImage(
       image: state.extendedImageInfo?.image,
-      height: fittedSizes.destination.height == 0 ? null : fittedSizes.destination.height,
-      width: fittedSizes.destination.width == 0 ? null : fittedSizes.destination.width,
+      height: fittedSizes.destination.height == 0
+          ? null
+          : fittedSizes.destination.height,
+      width: fittedSizes.destination.width == 0
+          ? null
+          : fittedSizes.destination.width,
       scale: state.extendedImageInfo?.scale ?? 1.0,
       fit: widget.fit,
     );
   }
+}
+
+final _sourceFacts = Expando<_ImageSourceFacts>('image source facts');
+
+class _ImageSourceFacts {
+  int? encodedLength;
+  String? mime;
+  int? width;
+  int? height;
+
+  ImageSourceInfo? get info => encodedLength == null
+      ? null
+      : ImageSourceInfo(
+          encodedLength: encodedLength!,
+          mime: mime,
+          width: width,
+          height: height,
+        );
+}
+
+mixin _SourceImageObserver<T extends Object>
+    on ImageProvider<T>, ExtendedImageProvider<T> {
+  final sourceFacts = _ImageSourceFacts();
+
+  Object get sourceCacheKey;
+
+  @override
+  Future<ui.Codec> instantiateImageCodec(
+    Uint8List data,
+    ImageDecoderCallback decode,
+  ) {
+    sourceFacts.encodedLength = data.length;
+    sourceFacts.mime = _sourceMime(data);
+    return super.instantiateImageCodec(data, decode);
+  }
+}
+
+class _ObservedFileImageProvider extends ExtendedFileImageProvider
+    with _SourceImageObserver<FileImage> {
+  _ObservedFileImageProvider(super.file);
+
+  @override
+  Object get sourceCacheKey => runtimeType == _ObservedFileImageProvider
+      ? ExtendedFileImageProvider(file)
+      : this;
+}
+
+class _ObservedNetworkImageProvider
+    extends network_image_io.ExtendedNetworkImageProvider
+    with _SourceImageObserver<ExtendedNetworkImageProvider> {
+  _ObservedNetworkImageProvider(super.url, {super.cache, super.printError});
+
+  @override
+  Object get sourceCacheKey => runtimeType == _ObservedNetworkImageProvider
+      ? ExtendedNetworkImageProvider(url, cache: cache, printError: printError)
+      : this;
+}
+
+/// Observes the intrinsic dimensions in the normal decoder callback. The
+/// maxBytes calculation retains the reader's existing decode-size behavior.
+class _SourceImageProvider extends ImageProvider<Object>
+    with ExtendedImageProvider<Object> {
+  final ImageProvider<dynamic> provider;
+  final int? maxBytes;
+
+  const _SourceImageProvider({required this.provider, this.maxBytes});
+
+  @override
+  bool get cacheRawData => false;
+
+  @override
+  String? get imageCacheName => null;
+
+  @override
+  Future<Object> obtainKey(ImageConfiguration configuration) {
+    final source = (provider as _SourceImageObserver).sourceCacheKey;
+    final limit = maxBytes;
+    // Keep ordinary file/network eviction and hot cache hits working. Managed
+    // and animation providers retain their existing identities and rawHash.
+    return SynchronousFuture(
+      limit != null && limit > 0 ? (source: source, maxBytes: limit) : source,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is _SourceImageProvider &&
+      provider == other.provider &&
+      maxBytes == other.maxBytes;
+
+  @override
+  int get hashCode => Object.hash(provider, maxBytes);
+
+  @override
+  ImageStreamCompleter loadImage(Object key, ImageDecoderCallback decode) {
+    final facts = (provider as _SourceImageObserver).sourceFacts;
+    // These file/network providers use themselves as the load key. Only the
+    // cache key above is canonicalized to the original unobserved provider.
+    final completer = provider.loadImage(provider, (
+      ui.ImmutableBuffer buffer, {
+      ui.TargetImageSizeCallback? getTargetSize,
+    }) {
+      final encodedLength = buffer.length;
+      return decode(
+        buffer,
+        getTargetSize: (width, height) {
+          facts.width = width;
+          facts.height = height;
+          final limit = maxBytes;
+          if (limit != null && limit > 0 && limit < encodedLength) {
+            final pixels = width * height * limit ~/ encodedLength;
+            final targetHeight = math.sqrt(pixels / (width / height)).floor();
+            final targetWidth = (width / height * targetHeight).floor();
+            // ImageDescriptor previously treated nonpositive dimensions as
+            // unspecified; the callback API requires null in that case.
+            return ui.TargetImageSize(
+              width: targetWidth > 0 ? targetWidth : null,
+              height: targetHeight > 0 ? targetHeight : null,
+            );
+          }
+          return getTargetSize?.call(width, height) ??
+              const ui.TargetImageSize();
+        },
+      );
+    });
+    _sourceFacts[completer] = facts;
+    return completer;
+  }
+}
+
+String? _sourceMime(Uint8List bytes) {
+  bool matches(int offset, List<int> signature) {
+    if (bytes.length < offset + signature.length) {
+      return false;
+    }
+    for (var i = 0; i < signature.length; i++) {
+      if (bytes[offset + i] != signature[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  if (matches(0, [0xff, 0xd8, 0xff])) {
+    return 'image/jpeg';
+  }
+  if (matches(0, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) {
+    return 'image/png';
+  }
+  if (matches(0, [0x47, 0x49, 0x46, 0x38])) {
+    return 'image/gif';
+  }
+  if (matches(0, [0x52, 0x49, 0x46, 0x46]) &&
+      matches(8, [0x57, 0x45, 0x42, 0x50])) {
+    return 'image/webp';
+  }
+  if (matches(0, [0x42, 0x4d])) {
+    return 'image/bmp';
+  }
+  if (matches(4, [0x66, 0x74, 0x79, 0x70])) {
+    if (matches(8, [0x61, 0x76, 0x69, 0x66]) ||
+        matches(8, [0x61, 0x76, 0x69, 0x73])) {
+      return 'image/avif';
+    }
+    if (matches(8, [0x68, 0x65, 0x69, 0x63]) ||
+        matches(8, [0x68, 0x65, 0x69, 0x78])) {
+      return 'image/heic';
+    }
+  }
+  return null;
 }
 
 /// A live switch shared between an animated image's codec and its visibility
@@ -451,17 +745,84 @@ class _SingleFrameCodec implements ui.Codec {
   void dispose() => _inner.dispose();
 }
 
-class _SingleFrameExtendedFileImageProvider extends ExtendedFileImageProvider {
-  const _SingleFrameExtendedFileImageProvider(super.file);
+class _SingleFrameExtendedFileImageProvider extends _ObservedFileImageProvider {
+  _SingleFrameExtendedFileImageProvider(super.file);
 
   @override
-  Future<ui.Codec> instantiateImageCodec(Uint8List data, ImageDecoderCallback decode) async {
+  Future<ui.Codec> instantiateImageCodec(
+    Uint8List data,
+    ImageDecoderCallback decode,
+  ) async {
     final ui.Codec codec = await super.instantiateImageCodec(data, decode);
     if (codec.frameCount > 1) {
       return _SingleFrameCodec(codec);
     }
     return codec;
   }
+}
+
+/// Obtains independently owned image bytes. Flutter decoding and animation
+/// proceed after the owner has released the resident page lease.
+class _ManagedFileImageProvider extends _ObservedFileImageProvider {
+  final ManagedPageLocation location;
+  final bool singleFrame;
+  final EHImageAnimationGate? gate;
+
+  _ManagedFileImageProvider(
+    super.file,
+    this.location, {
+    required this.singleFrame,
+    this.gate,
+  });
+
+  @override
+  ImageStreamCompleter loadImage(FileImage key, ImageDecoderCallback decode) =>
+      MultiFrameImageStreamCompleter(
+        codec: _loadManaged(key, decode),
+        scale: key.scale,
+        debugLabel: file.path,
+      );
+
+  Future<ui.Codec> _loadManaged(
+    FileImage key,
+    ImageDecoderCallback decode,
+  ) async {
+    final bytes = await localContentService.readPageForDisplay(
+      location.copyId,
+      location.ordinal,
+    );
+    if (bytes.isEmpty) {
+      imageCache.evict(key);
+      throw StateError(
+        '${file.path} is empty and cannot be loaded as an image.',
+      );
+    }
+    final codec = await instantiateImageCodec(bytes, decode);
+    if (singleFrame && codec.frameCount > 1) return _SingleFrameCodec(codec);
+    if (gate != null && codec.frameCount > 1)
+      return _PausableCodec(codec, gate!);
+    return codec;
+  }
+
+  @override
+  bool operator ==(dynamic other) =>
+      other is _ManagedFileImageProvider &&
+      scale == other.scale &&
+      location.copyId == other.location.copyId &&
+      location.ordinal == other.location.ordinal &&
+      location.rawHash == other.location.rawHash &&
+      singleFrame == other.singleFrame &&
+      gate == other.gate;
+
+  @override
+  int get hashCode => Object.hash(
+    scale,
+    location.copyId,
+    location.ordinal,
+    location.rawHash,
+    singleFrame,
+    gate,
+  );
 }
 
 /// Wraps a multi-frame codec so that [getNextFrame] blocks while the gate is
@@ -479,7 +840,8 @@ class _PausableCodec implements ui.Codec {
   /// Never completes. Returned once the codec has been disposed so the image
   /// completer's decode loop just stays parked instead of throwing on a
   /// disposed native codec (which would surface in the debug console).
-  static final Future<ui.FrameInfo> _neverCompletes = Completer<ui.FrameInfo>().future;
+  static final Future<ui.FrameInfo> _neverCompletes =
+      Completer<ui.FrameInfo>().future;
 
   @override
   int get frameCount => _inner.frameCount;
@@ -515,26 +877,37 @@ class _PausableCodec implements ui.Codec {
   }
 }
 
-class _GateExtendedFileImageProvider extends ExtendedFileImageProvider {
+class _GateExtendedFileImageProvider extends _ObservedFileImageProvider {
   // ignore: prefer_const_constructors_in_immutables
   _GateExtendedFileImageProvider(super.file, this.gate);
 
   final EHImageAnimationGate gate;
 
   @override
-  Future<ui.Codec> instantiateImageCodec(Uint8List data, ImageDecoderCallback decode) async {
+  Future<ui.Codec> instantiateImageCodec(
+    Uint8List data,
+    ImageDecoderCallback decode,
+  ) async {
     final ui.Codec codec = await super.instantiateImageCodec(data, decode);
     return codec.frameCount > 1 ? _PausableCodec(codec, gate) : codec;
   }
 }
 
-class _GateExtendedNetworkImageProvider extends network_image_io.ExtendedNetworkImageProvider {
-  _GateExtendedNetworkImageProvider(super.url, {super.cache, super.printError, required this.gate});
+class _GateExtendedNetworkImageProvider extends _ObservedNetworkImageProvider {
+  _GateExtendedNetworkImageProvider(
+    super.url, {
+    super.cache,
+    super.printError,
+    required this.gate,
+  });
 
   final EHImageAnimationGate gate;
 
   @override
-  Future<ui.Codec> instantiateImageCodec(Uint8List data, ImageDecoderCallback decode) async {
+  Future<ui.Codec> instantiateImageCodec(
+    Uint8List data,
+    ImageDecoderCallback decode,
+  ) async {
     final ui.Codec codec = await super.instantiateImageCodec(data, decode);
     return codec.frameCount > 1 ? _PausableCodec(codec, gate) : codec;
   }

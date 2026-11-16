@@ -7,8 +7,12 @@ import 'package:simple_animations/animation_mixin/animation_mixin.dart';
 import '../model/gallery_tag.dart';
 
 class EHTag extends StatefulWidget {
+  static const labelStyle = TextStyle(fontSize: 12, height: 1);
+  static const contentPadding = EdgeInsets.symmetric(horizontal: 6, vertical: 3);
+
   final GalleryTag tag;
   final bool addNameSpaceColor;
+  final double? height;
   final ValueChanged<GalleryTag>? onTap;
   final ValueChanged<GalleryTag>? onSecondaryTap;
   final ValueChanged<GalleryTag>? onLongPress;
@@ -19,6 +23,7 @@ class EHTag extends StatefulWidget {
     Key? key,
     required this.tag,
     this.addNameSpaceColor = false,
+    this.height = 24,
     this.onTap,
     this.onSecondaryTap,
     this.onLongPress,
@@ -67,9 +72,7 @@ class _EHTagState extends State<EHTag> with AnimationMixin {
                   : ''),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: TextStyle(
-        fontSize: 12,
-        height: 1,
+      style: EHTag.labelStyle.copyWith(
         color: widget.tag.color ?? (widget.addNameSpaceColor ? UIConfig.tagNameSpaceTextColor : UIConfig.ehTagTextColor(context)),
       ),
     );
@@ -118,8 +121,8 @@ class _EHTagState extends State<EHTag> with AnimationMixin {
     }
 
     child = Container(
-      height: 24,
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      height: widget.height,
+      padding: EHTag.contentPadding,
       decoration: BoxDecoration(
         color: widget.tag.backgroundColor ??
             (widget.addNameSpaceColor

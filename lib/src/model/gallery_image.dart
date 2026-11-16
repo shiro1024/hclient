@@ -1,6 +1,16 @@
 import '../database/database.dart';
 import '../service/gallery_download/gallery_download_service.dart';
 
+/// In-memory identity for an owner-managed page. Its path can change while a
+/// reading page remains open; physical reads must resolve through the owner.
+class ManagedPageLocation {
+  final String copyId;
+  final int ordinal;
+  final String? rawHash;
+
+  const ManagedPageLocation(this.copyId, this.ordinal, this.rawHash);
+}
+
 class GalleryImage {
   String url;
   double? height;
@@ -14,6 +24,7 @@ class GalleryImage {
   String? reloadKey;
 
   String? path;
+  ManagedPageLocation? managedPage;
   String? imageHash;
   DownloadStatus downloadStatus;
 
@@ -27,6 +38,7 @@ class GalleryImage {
     this.reloadKey,
     this.imageHash,
     this.path,
+    this.managedPage,
     this.downloadStatus = DownloadStatus.none,
   });
 
@@ -81,6 +93,7 @@ class GalleryImage {
     double? originalImageWidth,
     String? imageHash,
     String? path,
+    ManagedPageLocation? managedPage,
     DownloadStatus? downloadStatus,
   }) {
     return GalleryImage(
@@ -93,6 +106,7 @@ class GalleryImage {
       reloadKey: reloadKey ?? this.reloadKey,
       imageHash: imageHash ?? this.imageHash,
       path: path ?? this.path,
+      managedPage: managedPage ?? this.managedPage,
       downloadStatus: downloadStatus ?? this.downloadStatus,
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/routes/routes.dart';
+
 import '../../setting/user_setting.dart';
 import '../../utils/route_util.dart';
 import '../layout/mobile_v2/notification/tap_menu_button_notification.dart';
@@ -17,7 +18,10 @@ class SettingPage extends StatelessWidget {
         centerTitle: true,
         title: Text('setting'.tr),
         leading: showMenuButton
-            ? IconButton(icon: Icon(Icons.menu, size: 20), onPressed: () => TapMenuButtonNotification().dispatch(context))
+            ? IconButton(
+                icon: Icon(Icons.menu, size: 20),
+                onPressed: () => TapMenuButtonNotification().dispatch(context),
+              )
             : null,
       ),
       body: Obx(
@@ -81,14 +85,14 @@ class SettingPage extends StatelessWidget {
             //   onTap: () => toRoute(Routes.settingPrefix + 'cloud'),
             // ),
             ListTile(
+              leading: const Icon(Icons.cloud_outlined),
+              title: Text('webdav'.tr),
+              onTap: () => toRoute(Routes.settingWebDav),
+            ),
+            ListTile(
               leading: const Icon(Icons.security),
               title: Text('security'.tr),
               onTap: () => toRoute(Routes.settingPrefix + 'security'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.info),
-              title: Text('about'.tr),
-              onTap: () => toRoute(Routes.settingPrefix + 'about'),
             ),
           ],
         ),

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 class SpeedComputer {
   Timer? timer;
@@ -12,7 +12,11 @@ class SpeedComputer {
 
   VoidCallback? updateCallback;
 
-  SpeedComputer({this.updateCallback});
+  SpeedComputer({this.updateCallback, Duration Function()? elapsed})
+    : _elapsed = elapsed;
+  final Duration Function()? _elapsed;
+  int get _nowMicros =>
+      _elapsed?.call().inMicroseconds ?? _clock.elapsedMicroseconds;
 
   bool isActive() {
     return timer?.isActive ?? false;
@@ -22,44 +26,36 @@ class SpeedComputer {
     if (isActive()) {
       return;
     }
-    timer = Timer.periodic(const Duration(seconds: 1), (_) => computeAndUpdateSpeed());
+    _clock.start();
+    _sampleMicros = _nowMicros;
+    downloadedBytesLastTime = downloadedBytes;
+    timer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => computeAndUpdateSpeed(),
+    );
   }
 
+  final Stopwatch _clock = Stopwatch();
+  int _sampleMicros = 0;
+  double bytesPerSecond = 0;
+
   void computeAndUpdateSpeed() {
-    int prevDownloadedBytesLastTime = downloadedBytesLastTime;
+    final now = _nowMicros;
+    final elapsed = now - _sampleMicros;
+    final delta = downloadedBytes - downloadedBytesLastTime;
     downloadedBytesLastTime = downloadedBytes;
-
-    double difference = 0.0 + downloadedBytes - prevDownloadedBytesLastTime;
-
-    if (difference <= 0) {
-      speed = '0 B/s';
-      updateCallback?.call();
-      return;
-    }
-
-    if (difference < 1024) {
-      speed = '${difference.toInt()} B/s';
-      updateCallback?.call();
-      return;
-    }
-
-    difference /= 1024;
-    if (difference < 1024) {
-      speed = '${difference.toInt()} KB/s';
-      updateCallback?.call();
-      return;
-    }
-
-    difference /= 1024;
-    if (difference < 1024) {
-      speed = '${difference.toStringAsFixed(1)} MB/s';
-      updateCallback?.call();
-      return;
-    }
-
-    difference /= 1024;
-    speed = '${difference.toStringAsFixed(2)} GB/s';
+    _sampleMicros = now;
+    bytesPerSecond = elapsed > 0 && delta > 0 ? delta * 1000000 / elapsed : 0;
+    speed = formatSpeed(bytesPerSecond);
     updateCallback?.call();
+  }
+
+  static String formatSpeed(double bytes) {
+    if (bytes < 1024) return '${bytes.toInt()} B/s';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toInt()} KB/s';
+    if (bytes < 1024 * 1024 * 1024)
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB/s';
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB/s';
   }
 
   void resetDownloadedBytes(int bytes) {
@@ -69,10 +65,11 @@ class SpeedComputer {
 
   void pause() {
     timer?.cancel();
-    speed = '0 KB/s';
+    bytesPerSecond = 0;
+    speed = '0 B/s';
   }
 
   void dispose() {
-    timer?.cancel();
+    pause();
   }
 }

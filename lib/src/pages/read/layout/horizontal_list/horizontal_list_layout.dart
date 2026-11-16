@@ -49,7 +49,7 @@ class HorizontalListLayout extends BaseLayout {
             itemPositionsListener: state.itemPositionsListener,
             scrollOffsetController: state.scrollOffsetController,
             itemBuilder: (context, index) =>
-            readPageState.readPageInfo.mode == ReadMode.online ? buildItemInOnlineMode(context, index) : buildItemInLocalMode(context, index),
+                readPageState.readPageInfo.mode == ReadMode.online ? buildItemInOnlineMode(context, index) : buildItemInLocalMode(context, index),
             separatorBuilder: (_, __) => Obx(() => SizedBox(width: readSetting.imageSpace.value.toDouble())),
           ),
         ),

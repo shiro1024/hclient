@@ -39,13 +39,16 @@ import '../../../../exception/eh_image_exception.dart';
 import '../../../../model/gallery_image.dart';
 import '../../../../model/read_page_info.dart';
 import '../../../../service/log.dart';
+import '../../../../service/local_content_service.dart';
 import '../../../../setting/read_setting.dart';
 import '../../../../utils/route_util.dart';
 import '../../../../utils/screen_size_util.dart';
 import '../../read_page_logic.dart';
+import '../../../../service/content_page_download_service.dart';
 import '../../read_page_state.dart';
 
-abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStateMixin {
+abstract class BaseLayoutLogic extends GetxController
+    with GetTickerProviderStateMixin {
   static const String pageId = 'pageId';
 
   final ReadPageLogic readPageLogic = Get.find<ReadPageLogic>();
@@ -58,9 +61,18 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
 
   @override
   void onInit() {
-    doubleTapGestureSwitcherListener = ever(readSetting.enableDoubleTapToScaleUp, (value) => updateSafely([pageId]));
-    tapDragGestureSwitcherListener = ever(readSetting.enableTapDragToScaleUp, (value) => updateSafely([pageId]));
-    showScrollBarListener = ever(readSetting.showScrollBar, (value) => updateSafely([pageId]));
+    doubleTapGestureSwitcherListener = ever(
+      readSetting.enableDoubleTapToScaleUp,
+      (value) => updateSafely([pageId]),
+    );
+    tapDragGestureSwitcherListener = ever(
+      readSetting.enableTapDragToScaleUp,
+      (value) => updateSafely([pageId]),
+    );
+    showScrollBarListener = ever(
+      readSetting.showScrollBar,
+      (value) => updateSafely([pageId]),
+    );
     super.onInit();
   }
 
@@ -123,7 +135,11 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
   }
 
   void onPointerScroll(PointerScrollEvent value) {
-    final ctrlPressed = HardwareKeyboard.instance.logicalKeysPressed.any((key) => key == LogicalKeyboardKey.controlLeft || key == LogicalKeyboardKey.controlRight);
+    final ctrlPressed = HardwareKeyboard.instance.logicalKeysPressed.any(
+      (key) =>
+          key == LogicalKeyboardKey.controlLeft ||
+          key == LogicalKeyboardKey.controlRight,
+    );
     if (ctrlPressed) {
       return;
     }
@@ -137,27 +153,54 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
 
   /// Unified entry point for online image context menus.
   /// Dispatches to [showOnlineDesktopContextMenu] on desktop or [showOnlineMobileBottomMenu] on mobile.
-  void showOnlineImageContextMenu(int index, BuildContext context, {Offset? position}) {
+  void showOnlineImageContextMenu(
+    int index,
+    BuildContext context, {
+    Offset? position,
+  }) {
     if (styleSetting.isInDesktopLayout && position != null) {
-      showOnlineDesktopContextMenu(index: index, context: context, position: position);
+      showOnlineDesktopContextMenu(
+        index: index,
+        context: context,
+        position: position,
+      );
     } else {
       showOnlineMobileBottomMenu(index, context);
     }
   }
 
   /// Desktop right-click context menu for online images.
-  Future<void> showOnlineDesktopContextMenu({required int index, required BuildContext context, required Offset position}) async {
+  Future<void> showOnlineDesktopContextMenu({
+    required int index,
+    required BuildContext context,
+    required Offset position,
+  }) async {
     final selected = await showMenu<String>(
       context: context,
       popUpAnimationStyle: AnimationStyle.noAnimation,
-      position: RelativeRect.fromLTRB(position.dx, position.dy, position.dx, position.dy),
+      position: RelativeRect.fromLTRB(
+        position.dx,
+        position.dy,
+        position.dx,
+        position.dy,
+      ),
       items: [
         PopupMenuItem(value: 'reload', child: Text('reload'.tr)),
         PopupMenuItem(value: 'copyImage', child: Text('copyImage'.tr)),
-        PopupMenuItem(value: 'copy_eh_page_url', child: Text('copyEHPageUrl'.tr)),
-        PopupMenuItem(value: 'save', child: Text('${'save'.tr}(${'resampleImage'.tr})')),
-        if (readPageState.images[index]!.originalImageUrl != null && userSetting.hasLoggedIn())
-          PopupMenuItem(value: 'save_original', child: Text('${'save'.tr}(${'originalImage'.tr})')),
+        PopupMenuItem(
+          value: 'copy_eh_page_url',
+          child: Text('copyEHPageUrl'.tr),
+        ),
+        PopupMenuItem(
+          value: 'save',
+          child: Text('${'save'.tr}(${'resampleImage'.tr})'),
+        ),
+        if (readPageState.images[index]!.originalImageUrl != null &&
+            userSetting.hasLoggedIn())
+          PopupMenuItem(
+            value: 'save_original',
+            child: Text('${'save'.tr}(${'originalImage'.tr})'),
+          ),
         PopupMenuItem(value: 'open_read_setting', child: Text('setting'.tr)),
       ],
     );
@@ -225,7 +268,8 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
               saveOnlineImage(index);
             },
           ),
-          if (readPageState.images[index]!.originalImageUrl != null && userSetting.hasLoggedIn())
+          if (readPageState.images[index]!.originalImageUrl != null &&
+              userSetting.hasLoggedIn())
             CupertinoActionSheetAction(
               child: ehActionSheetText('${'save'.tr}(${'originalImage'.tr})'),
               onPressed: () async {
@@ -234,10 +278,36 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
               },
             ),
         ],
-        cancelButton: CupertinoActionSheetAction(child: ehActionSheetText('cancel'.tr), onPressed: backRoute),
+        cancelButton: CupertinoActionSheetAction(
+          child: ehActionSheetText('cancel'.tr),
+          onPressed: backRoute,
+        ),
       ),
     );
   }
+
+  File _localImageFile(int index) => File(
+    readPageState.readPageInfo.mode == ReadMode.downloaded
+        ? _getDownloadedImageAbsolutePath(index)
+        : _getArchiveImageAbsolutePath(index),
+  );
+
+  Future<({Uint8List bytes, String name})> _localImageExport(int index) async {
+    final managed = managedPage(index);
+    if (managed != null) {
+      return localContentService.readPageForExport(
+        managed.copyId,
+        managed.ordinal,
+      );
+    }
+    final file = _localImageFile(index);
+    return (bytes: await file.readAsBytes(), name: basename(file.path));
+  }
+
+  // File clipboards expose a path for a later paste. Keep that one-page export
+  // independent of the managed root, and retire it after the next successful
+  // clipboard replacement. The existing download temp cleanup handles startup.
+  static File? _clipboardImageFile;
 
   String _getDownloadedImageAbsolutePath(int index) {
     return DownloadPathResolver.computeImageDownloadAbsolutePathFromRelativePath(
@@ -246,26 +316,43 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
   }
 
   String _getArchiveImageAbsolutePath(int index) {
-    return join(pathService.getVisibleDir().path, readPageState.images[index]!.path!);
+    return join(
+      pathService.getVisibleDir().path,
+      readPageState.images[index]!.path!,
+    );
   }
 
   /// Unified entry point for local image context menus.
   /// Handles [ReadMode.downloaded] and [ReadMode.archive].
   /// Dispatches to desktop context menus or mobile bottom sheets based on current layout.
   /// [ReadMode.online] images use [showOnlineImageContextMenu] instead.
-  void showLocalImageContextMenu(int index, BuildContext context, {Offset? position}) {
+  void showLocalImageContextMenu(
+    int index,
+    BuildContext context, {
+    Offset? position,
+  }) {
     final mode = readPageState.readPageInfo.mode;
-    if (mode == ReadMode.online || mode == ReadMode.local) {
+    if (mode == ReadMode.online ||
+        (mode == ReadMode.local && managedPage(index) == null)) {
       return;
     }
 
-    final showDownloadedMenu = mode == ReadMode.downloaded;
+    final showDownloadedMenu =
+        mode == ReadMode.downloaded || managedPage(index) != null;
 
     if (styleSetting.isInDesktopLayout && position != null) {
       if (showDownloadedMenu) {
-        showDownloadedDesktopContextMenu(index: index, context: context, position: position);
+        showDownloadedDesktopContextMenu(
+          index: index,
+          context: context,
+          position: position,
+        );
       } else {
-        showArchiveDesktopContextMenu(index: index, context: context, position: position);
+        showArchiveDesktopContextMenu(
+          index: index,
+          context: context,
+          position: position,
+        );
       }
     } else {
       if (showDownloadedMenu) {
@@ -278,7 +365,8 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
 
   /// Mobile bottom action sheet for downloaded-mode images.
   void showDownloadedMobileBottomMenu(int index, BuildContext context) {
-    if (galleryDownloadService.galleryDownloadInfos[readPageState.readPageInfo.gid]?.imageAtSync(index)?.downloadStatus != DownloadStatus.downloaded) {
+    if (readPageState.images[index]?.downloadStatus !=
+        DownloadStatus.downloaded) {
       return;
     }
 
@@ -318,11 +406,14 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
             child: ehActionSheetText('reDownload'.tr),
             onPressed: () {
               backRoute();
-              galleryDownloadService.reDownloadImage(readPageState.readPageInfo.gid!, index);
+              redownloadImage(index);
             },
           ),
         ],
-        cancelButton: CupertinoActionSheetAction(child: ehActionSheetText('cancel'.tr), onPressed: backRoute),
+        cancelButton: CupertinoActionSheetAction(
+          child: ehActionSheetText('cancel'.tr),
+          onPressed: backRoute,
+        ),
       ),
     );
   }
@@ -359,7 +450,10 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
             },
           ),
         ],
-        cancelButton: CupertinoActionSheetAction(child: ehActionSheetText('cancel'.tr), onPressed: backRoute),
+        cancelButton: CupertinoActionSheetAction(
+          child: ehActionSheetText('cancel'.tr),
+          onPressed: backRoute,
+        ),
       ),
     );
   }
@@ -370,17 +464,26 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
     required BuildContext context,
     required Offset position,
   }) async {
-    if (galleryDownloadService.galleryDownloadInfos[readPageState.readPageInfo.gid]?.imageAtSync(index)?.downloadStatus != DownloadStatus.downloaded) {
+    if (readPageState.images[index]?.downloadStatus !=
+        DownloadStatus.downloaded) {
       return;
     }
 
     final selected = await showMenu<String>(
       context: context,
       popUpAnimationStyle: AnimationStyle.noAnimation,
-      position: RelativeRect.fromLTRB(position.dx, position.dy, position.dx, position.dy),
+      position: RelativeRect.fromLTRB(
+        position.dx,
+        position.dy,
+        position.dx,
+        position.dy,
+      ),
       items: [
         PopupMenuItem(value: 'copyImage', child: Text('copyImage'.tr)),
-        PopupMenuItem(value: 'copy_eh_page_url', child: Text('copyEHPageUrl'.tr)),
+        PopupMenuItem(
+          value: 'copy_eh_page_url',
+          child: Text('copyEHPageUrl'.tr),
+        ),
         PopupMenuItem(value: 'save', child: Text('save'.tr)),
         PopupMenuItem(value: 'redownload', child: Text('reDownload'.tr)),
         PopupMenuItem(value: 'open_read_setting', child: Text('setting'.tr)),
@@ -398,7 +501,7 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
         saveDownloadedImageFile(index);
         break;
       case 'redownload':
-        galleryDownloadService.reDownloadImage(readPageState.readPageInfo.gid!, index);
+        redownloadImage(index);
         break;
       case 'open_read_setting':
         readPageLogic.openReadSetting(context);
@@ -419,7 +522,12 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
     final selected = await showMenu<String>(
       context: context,
       popUpAnimationStyle: AnimationStyle.noAnimation,
-      position: RelativeRect.fromLTRB(position.dx, position.dy, position.dx, position.dy),
+      position: RelativeRect.fromLTRB(
+        position.dx,
+        position.dy,
+        position.dx,
+        position.dy,
+      ),
       items: [
         PopupMenuItem(value: 'copyImage', child: Text('copyImage'.tr)),
         PopupMenuItem(value: 'save', child: Text('save'.tr)),
@@ -446,7 +554,9 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
       return;
     }
 
-    Uint8List? data = await getNetworkImageData(readPageState.images[index]!.url);
+    Uint8List? data = await getNetworkImageData(
+      readPageState.images[index]!.url,
+    );
     if (data == null) {
       return;
     }
@@ -456,28 +566,58 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
       ext = basename(readPageState.images[index]!.url);
     }
 
-    String fileName = '${readPageState.readPageInfo.gid!}_${readPageState.readPageInfo.token!}_$index$ext';
+    String fileName =
+        '${readPageState.readPageInfo.gid!}_${readPageState.readPageInfo.token!}_$index$ext';
 
-    Share.shareXFiles(
-      [XFile.fromData(data)],
-      sharePositionOrigin: Rect.fromLTWH(0, 0, fullScreenWidth, readPageState.displayRegionSize.height * 2 / 3),
-      fileNameOverrides: [fileName],
+    SharePlus.instance.share(
+      ShareParams(
+        files: [XFile.fromData(data)],
+        sharePositionOrigin: Rect.fromLTWH(
+          0,
+          0,
+          fullScreenWidth,
+          readPageState.displayRegionSize.height * 2 / 3,
+        ),
+        fileNameOverrides: [fileName],
+      ),
     );
   }
 
   /// Share a downloaded-mode image file via the system share sheet.
-  void shareDownloadedImageFile(int index) {
-    Share.shareXFiles(
-      [XFile(_getDownloadedImageAbsolutePath(index))],
-      sharePositionOrigin: Rect.fromLTWH(0, 0, fullScreenWidth, readPageState.displayRegionSize.height * 2 / 3),
-    );
-  }
+  Future<void> shareDownloadedImageFile(int index) =>
+      _shareLocalImageFile(index);
 
   /// Share an archive-mode image file via the system share sheet.
-  void shareArchiveImageFile(int index) {
-    Share.shareXFiles(
-      [XFile(_getArchiveImageAbsolutePath(index))],
-      sharePositionOrigin: Rect.fromLTWH(0, 0, fullScreenWidth, readPageState.displayRegionSize.height * 2 / 3),
+  Future<void> shareArchiveImageFile(int index) => _shareLocalImageFile(index);
+
+  Future<void> _shareLocalImageFile(int index) async {
+    if (managedPage(index) == null) {
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(_localImageFile(index).path)],
+          sharePositionOrigin: Rect.fromLTWH(
+            0,
+            0,
+            fullScreenWidth,
+            readPageState.displayRegionSize.height * 2 / 3,
+          ),
+        ),
+      );
+      return;
+    }
+    // The share plugin retains its independent cache copy for the recipient.
+    final image = await _localImageExport(index);
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile.fromData(image.bytes)],
+        fileNameOverrides: [image.name],
+        sharePositionOrigin: Rect.fromLTWH(
+          0,
+          0,
+          fullScreenWidth,
+          readPageState.displayRegionSize.height * 2 / 3,
+        ),
+      ),
     );
   }
 
@@ -489,7 +629,9 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
       return;
     }
 
-    Uint8List? data = await getNetworkImageData(readPageState.images[index]!.url);
+    Uint8List? data = await getNetworkImageData(
+      readPageState.images[index]!.url,
+    );
     if (data == null) {
       return;
     }
@@ -499,7 +641,8 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
       if (isEmptyOrNull(ext)) {
         ext = basename(readPageState.images[index]!.url);
       }
-      String fileName = '${readPageState.readPageInfo.gid!}_${readPageState.readPageInfo.token!}_$index$ext';
+      String fileName =
+          '${readPageState.readPageInfo.gid!}_${readPageState.readPageInfo.token!}_$index$ext';
       String filePath = join(downloadSetting.tempDownloadPath.value, fileName);
       File file = File(filePath);
       try {
@@ -519,21 +662,45 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
   }
 
   /// Copy a downloaded-mode image file to clipboard.
-  void copyDownloadedImageFile(int index) {
-    if (GetPlatform.isDesktop) {
-      Pasteboard.writeFiles([_getDownloadedImageAbsolutePath(index)]).then((_) => toast('hasCopiedToClipboard'.tr));
-    } else {
-      Pasteboard.writeImage(File(_getDownloadedImageAbsolutePath(index)).readAsBytesSync()).then((_) => toast('hasCopiedToClipboard'.tr));
-    }
-  }
+  Future<void> copyDownloadedImageFile(int index) => _copyLocalImageFile(index);
 
   /// Copy an archive-mode image file to clipboard.
-  void copyArchiveImageFile(int index) {
-    if (GetPlatform.isDesktop) {
-      Pasteboard.writeFiles([_getArchiveImageAbsolutePath(index)]).then((_) => toast('hasCopiedToClipboard'.tr));
+  Future<void> copyArchiveImageFile(int index) => _copyLocalImageFile(index);
+
+  Future<void> _copyLocalImageFile(int index) async {
+    final managed = managedPage(index);
+    if (GetPlatform.isDesktop && managed != null) {
+      final directory = await Directory(downloadSetting.tempDownloadPath.value)
+          .create(recursive: true);
+      final export = await directory.createTemp('clipboard-');
+      File? copied;
+      try {
+        final image = await _localImageExport(index);
+        copied = await File(join(export.path, image.name))
+            .writeAsBytes(image.bytes);
+        if (!await Pasteboard.writeFiles([copied.path])) {
+          await export.delete(recursive: true);
+          toast('failed'.tr);
+          return;
+        }
+        final previous = _clipboardImageFile;
+        _clipboardImageFile = copied;
+        if (previous != null && await previous.parent.exists()) {
+          await previous.parent.delete(recursive: true);
+        }
+      } catch (_) {
+        if (copied != _clipboardImageFile && await export.exists())
+          await export.delete(recursive: true);
+        rethrow;
+      }
     } else {
-      Pasteboard.writeImage(File(_getArchiveImageAbsolutePath(index)).readAsBytesSync()).then((_) => toast('hasCopiedToClipboard'.tr));
+      if (GetPlatform.isDesktop) {
+        await Pasteboard.writeFiles([_localImageFile(index).path]);
+      } else {
+        await Pasteboard.writeImage((await _localImageExport(index)).bytes);
+      }
     }
+    toast('hasCopiedToClipboard'.tr);
   }
 
   Future<void> saveOnlineImage(int index) async {
@@ -541,7 +708,9 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
       return;
     }
 
-    Uint8List? data = await getNetworkImageData(readPageState.images[index]!.url);
+    Uint8List? data = await getNetworkImageData(
+      readPageState.images[index]!.url,
+    );
     if (data == null) {
       return;
     }
@@ -552,10 +721,13 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
       ext = basename(readPageState.images[index]!.url);
     }
 
-    String fileName = '${readPageState.readPageInfo.gid!}_${readPageState.readPageInfo.token!}_$index$ext';
+    String fileName =
+        '${readPageState.readPageInfo.gid!}_${readPageState.readPageInfo.token!}_$index$ext';
 
     if (GetPlatform.isDesktop) {
-      File file = File(join(downloadSetting.singleImageSavePath.value, fileName));
+      File file = File(
+        join(downloadSetting.singleImageSavePath.value, fileName),
+      );
       try {
         await file.create(recursive: true);
         await file.writeAsBytes(data);
@@ -587,7 +759,8 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
       return;
     }
 
-    if (readPageState.images[index]!.originalImageUrl == null || !userSetting.hasLoggedIn()) {
+    if (readPageState.images[index]!.originalImageUrl == null ||
+        !userSetting.hasLoggedIn()) {
       return saveOnlineImage(index);
     }
 
@@ -597,30 +770,45 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
       ext = basename(readPageState.images[index]!.originalImageUrl!);
     }
 
-    String fileName = '${readPageState.readPageInfo.gid!}_${readPageState.readPageInfo.token!}_${index}_original$ext';
-    String downloadPath = join(downloadSetting.tempDownloadPath.value, fileName);
+    String fileName =
+        '${readPageState.readPageInfo.gid!}_${readPageState.readPageInfo.token!}_${index}_original$ext';
+    String downloadPath = join(
+      downloadSetting.tempDownloadPath.value,
+      fileName,
+    );
     File file = File(downloadPath);
 
     toast('downloading'.tr);
-    Response response = await ehRequest.download(url: readPageState.images[index]!.originalImageUrl!, path: downloadPath);
+    Response response = await ehRequest.download(
+      url: readPageState.images[index]!.originalImageUrl!,
+      path: downloadPath,
+    );
 
     /// what we downloaded is not an image
-    if (!response.isRedirect && (response.headers[Headers.contentTypeHeader]?.contains("text/html; charset=UTF-8") ?? false)) {
+    if (!response.isRedirect &&
+        (response.headers[Headers.contentTypeHeader]?.contains(
+              "text/html; charset=UTF-8",
+            ) ??
+            false)) {
       File file = File(downloadPath);
       String data = file.readAsStringSync();
       file.delete().ignore();
 
       EHImageException? exception = EHImageExceptionMatcher.match(data);
-      log.error('Save ${readPageState.readPageInfo.galleryTitle} image: $index failed, invalid reason: $exception');
+      log.error(
+        'Save ${readPageState.readPageInfo.galleryTitle} image: $index failed, invalid reason: $exception',
+      );
 
       if (exception != null) {
         if (exception.operation == EHImageExceptionAfterOperation.pause) {
           toast(exception.message, isShort: false);
           return;
-        } else if (exception.operation == EHImageExceptionAfterOperation.pauseAll) {
+        } else if (exception.operation ==
+            EHImageExceptionAfterOperation.pauseAll) {
           toast(exception.message, isShort: false);
           return;
-        } else if (exception.operation == EHImageExceptionAfterOperation.reParse) {
+        } else if (exception.operation ==
+            EHImageExceptionAfterOperation.reParse) {
           GalleryImage image;
           try {
             image = await readPageLogic.requestImage(index, true, null);
@@ -630,7 +818,8 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
             return;
           }
 
-          readPageState.images[index]!.originalImageUrl = image.originalImageUrl;
+          readPageState.images[index]!.originalImageUrl =
+              image.originalImageUrl;
 
           return saveOriginalOnlineImage(index);
         }
@@ -642,7 +831,9 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
 
     try {
       if (GetPlatform.isDesktop) {
-        await file.copy(join(downloadSetting.singleImageSavePath.value, fileName));
+        await file.copy(
+          join(downloadSetting.singleImageSavePath.value, fileName),
+        );
         toast('saveSuccess'.tr);
       } else {
         bool success = await _saveFile2Album(downloadPath, fileName);
@@ -657,57 +848,129 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
   }
 
   /// Save a downloaded-mode image file to the gallery/album or designated save path.
-  void saveDownloadedImageFile(int index) {
-    String filePath = _getDownloadedImageAbsolutePath(index);
-    File image = File(filePath);
-
-    String fileName = basename(image.path);
-    if (readPageState.readPageInfo.gid != null && readPageState.readPageInfo.token != null) {
-      fileName = '${readPageState.readPageInfo.gid!}_${readPageState.readPageInfo.token!}_$index${extension(image.path)}';
-    }
-
-    if (GetPlatform.isDesktop) {
-      image.copy(join(downloadSetting.singleImageSavePath.value, fileName)).then((_) => toast('success'.tr));
-    } else {
-      _saveFile2Album(filePath, fileName).then((_) => toast('success'.tr));
-    }
-  }
+  Future<void> saveDownloadedImageFile(int index) => _saveLocalImageFile(index);
 
   /// Save an archive-mode image file to the gallery/album or designated save path.
-  void saveArchiveImageFile(int index) {
-    String filePath = _getArchiveImageAbsolutePath(index);
-    File image = File(filePath);
+  Future<void> saveArchiveImageFile(int index) => _saveLocalImageFile(index);
 
-    String fileName = basename(image.path);
-    if (readPageState.readPageInfo.gid != null && readPageState.readPageInfo.token != null) {
-      fileName = '${readPageState.readPageInfo.gid!}_${readPageState.readPageInfo.token!}_$index${extension(image.path)}';
+  Future<void> _saveLocalImageFile(int index) async {
+    final image = await _localImageExport(index);
+    String fileName = image.name;
+    if (readPageState.readPageInfo.gid != null &&
+        readPageState.readPageInfo.token != null) {
+      fileName =
+          '${readPageState.readPageInfo.gid!}_${readPageState.readPageInfo.token!}_$index${extension(fileName)}';
     }
-
     if (GetPlatform.isDesktop) {
-      image.copy(join(downloadSetting.singleImageSavePath.value, fileName)).then((_) => toast('success'.tr));
-    } else {
-      _saveFile2Album(filePath, fileName).then((_) => toast('success'.tr));
+      final destination = File(
+        join(downloadSetting.singleImageSavePath.value, fileName),
+      );
+      await destination.parent.create(recursive: true);
+      await destination.writeAsBytes(image.bytes);
+      toast('success'.tr);
+      return;
+    }
+    if (managedPage(index) == null) {
+      final success = await _saveFile2Album(
+        _localImageFile(index).path,
+        fileName,
+      );
+      toast(success ? 'success'.tr : 'saveFailed'.tr);
+      return;
+    }
+    final directory = await Directory(downloadSetting.tempDownloadPath.value)
+        .create(recursive: true);
+    final export = await directory.createTemp('album-');
+    try {
+      final file = await File(join(export.path, fileName))
+          .writeAsBytes(image.bytes);
+      final success = await _saveFile2Album(file.path, fileName);
+      toast(success ? 'success'.tr : 'saveFailed'.tr);
+    } finally {
+      await export.delete(recursive: true);
     }
   }
 
-  void copyEHPageUrl(int index) {
-    String? pageUrl;
+  ManagedPageLocation? managedPage(int index) {
+    final image = readPageState.images[index];
+    if (image == null) return null;
+    if (image.managedPage != null) return image.managedPage;
+    if (image.path == null) return null;
+    final absolute = readPageState.readPageInfo.mode == ReadMode.downloaded
+        ? _getDownloadedImageAbsolutePath(index)
+        : _getArchiveImageAbsolutePath(index);
+    final managed = localContentService.managedPageForPathSync(absolute);
+    if (managed != null) image.managedPage = managed;
+    return managed;
+  }
 
-    if (readPageState.thumbnails[index] != null) {
-      pageUrl = readPageState.thumbnails[index]!.replacedMPVHref(index + 1);
-    }
-
-    if (pageUrl == null && readPageState.images[index]?.imageHash != null && readPageState.readPageInfo.gid != null) {
-      bool isEX = readPageState.readPageInfo.galleryUrl?.contains(EHConsts.EXIndex) == true;
-      pageUrl = (isEX ? EHConsts.EXIndex : EHConsts.EHIndex) + '/s/${readPageState.images[index]!.imageHash}/${readPageState.readPageInfo.gid}-${index + 1}';
-    }
-
-    if (pageUrl == null) {
-      toast('failed'.tr);
+  Future<void> redownloadImage(int index) async {
+    final managed = managedPage(index);
+    if (managed == null) {
+      await galleryDownloadService.reDownloadImage(
+        readPageState.readPageInfo.gid!,
+        index,
+      );
       return;
     }
+    try {
+      await contentPageDownloadService.redownload(
+        managed.copyId,
+        managed.ordinal,
+        galleryUrl: readPageState.readPageInfo.galleryUrl,
+      );
+      readPageState.imageContainerSizes[index] = null;
+      readPageLogic.updateSafely([
+        readPageLogic.layoutId,
+        '${readPageLogic.onlineImageId}::$index',
+      ]);
+      toast('success'.tr);
+    } catch (error, stack) {
+      if (error is DioException && CancelToken.isCancel(error)) return;
+      log.error(
+        'Content page replacement failed: ${managed.copyId}/${managed.ordinal}',
+        error,
+        stack,
+      );
+      toast('failed'.tr);
+    }
+  }
 
-    FlutterClipboard.copy(pageUrl).then((_) => toast('hasCopiedToClipboard'.tr));
+  Future<void> copyEHPageUrl(int index) async {
+    try {
+      final managed = managedPage(index);
+      String? pageUrl;
+      if (managed != null) {
+        pageUrl = await contentPageDownloadService.sourcePageUrl(
+          managed.copyId,
+          managed.ordinal,
+          galleryUrl: readPageState.readPageInfo.galleryUrl,
+        );
+      } else {
+        pageUrl = readPageState.thumbnails[index]?.replacedMPVHref(index + 1);
+        if (pageUrl == null &&
+            readPageState.images[index]?.imageHash != null &&
+            readPageState.readPageInfo.gid != null) {
+          bool isEX =
+              readPageState.readPageInfo.galleryUrl?.contains(
+                EHConsts.EXIndex,
+              ) ==
+              true;
+          pageUrl =
+              (isEX ? EHConsts.EXIndex : EHConsts.EHIndex) +
+              '/s/${readPageState.images[index]!.imageHash}/${readPageState.readPageInfo.gid}-${index + 1}';
+        }
+      }
+      if (pageUrl == null) {
+        toast('failed'.tr);
+        return;
+      }
+      await FlutterClipboard.copy(pageUrl);
+      toast('hasCopiedToClipboard'.tr);
+    } catch (error, stack) {
+      log.error('Source page lookup failed', error, stack);
+      toast('failed'.tr);
+    }
   }
 
   /// Compute image container size when we haven't parsed image's size
@@ -728,7 +991,10 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
   }
 
   Alignment _computeAlignmentByTapOffset(Offset offset) {
-    return Alignment((offset.dx - Get.size.width / 2) / (Get.size.width / 2), (offset.dy - Get.size.height / 2) / (Get.size.height / 2));
+    return Alignment(
+      (offset.dx - Get.size.width / 2) / (Get.size.width / 2),
+      (offset.dy - Get.size.height / 2) / (Get.size.height / 2),
+    );
   }
 
   Future<bool> _ensureSave2AlbumPermission() async {
@@ -738,7 +1004,9 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
       return true;
     }
 
-    log.warning('Save image to album failed: permission denied, status: $status');
+    log.warning(
+      'Save image to album failed: permission denied, status: $status',
+    );
 
     _showPermissionPermanentlyDeniedDialog();
 
@@ -751,8 +1019,14 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
         title: Text('permissionPermanentlyDenied'.tr),
         content: Text('permissionPermanentlyDeniedHint'.tr),
         actions: [
-          TextButton(onPressed: () => Get.back(result: false), child: Text('cancel'.tr)),
-          TextButton(onPressed: () => Get.back(result: true), child: Text('goToSetting'.tr)),
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: Text('cancel'.tr),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: Text('goToSetting'.tr),
+          ),
         ],
         actionsPadding: const EdgeInsets.only(left: 24, right: 24, bottom: 12),
       ),
@@ -771,7 +1045,7 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
     SaveResult saveResult = await SaverGallery.saveFile(
       filePath: filePath,
       fileName: fileName,
-      albumPath: "JHenTai",
+      albumPath: "hClient",
       skipIfExists: false,
     );
 

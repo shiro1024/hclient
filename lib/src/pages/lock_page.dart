@@ -1,3 +1,5 @@
+import '../service/transfer_activity_service.dart';
+
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -12,9 +14,10 @@ import 'package:local_auth_android/local_auth_android.dart';
 import 'package:local_auth_darwin/local_auth_darwin.dart';
 import 'package:local_auth_windows/local_auth_windows.dart';
 import 'package:pinput/pinput.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:window_manager/legacy.dart';
 
 import '../config/ui_config.dart';
+import '../service/log.dart';
 
 class LockPage extends StatefulWidget {
   const LockPage({Key? key}) : super(key: key);
@@ -23,7 +26,8 @@ class LockPage extends StatefulWidget {
   State<LockPage> createState() => _LockPageState();
 }
 
-class _LockPageState extends State<LockPage> with WindowListener, WindowWidgetMixin {
+class _LockPageState extends State<LockPage>
+    with WindowListener, WindowWidgetMixin {
   String hintText = 'localizedReason'.tr;
 
   TextEditingController controller = TextEditingController();
@@ -60,7 +64,7 @@ class _LockPageState extends State<LockPage> with WindowListener, WindowWidgetMi
                           width: UIConfig.lockPagePinCodeRegionWidth,
                           height: UIConfig.lockPageCursorHeight,
                           color: UIConfig.lockPageFilledDashColor(context),
-                        )
+                        ),
                       ],
                     ),
                     cursor: Column(
@@ -70,7 +74,7 @@ class _LockPageState extends State<LockPage> with WindowListener, WindowWidgetMi
                           width: UIConfig.lockPagePinCodeRegionWidth,
                           height: UIConfig.lockPageCursorHeight,
                           color: UIConfig.lockPageUnfilledDashColor(context),
-                        )
+                        ),
                       ],
                     ),
                     defaultPinTheme: const PinTheme(
@@ -79,7 +83,8 @@ class _LockPageState extends State<LockPage> with WindowListener, WindowWidgetMi
                       textStyle: TextStyle(fontSize: 24),
                     ),
                     onCompleted: (String value) {
-                      if (keyToMd5(value) != securitySetting.encryptedPassword.value) {
+                      if (keyToMd5(value) !=
+                          securitySetting.encryptedPassword.value) {
                         setState(() {
                           controller.clear();
                           hintText = 'passwordErrorHint'.tr;
@@ -97,7 +102,10 @@ class _LockPageState extends State<LockPage> with WindowListener, WindowWidgetMi
                   child: Text(hintText),
                 ),
                 if (securitySetting.enableBiometricAuth.isTrue)
-                  IconButton(onPressed: biometricAuth, icon: const Icon(Icons.fingerprint, size: 40)).marginOnly(top: 24),
+                  IconButton(
+                    onPressed: biometricAuth,
+                    icon: const Icon(Icons.fingerprint, size: 40),
+                  ).marginOnly(top: 24),
               ],
             ),
           ),
@@ -107,33 +115,33 @@ class _LockPageState extends State<LockPage> with WindowListener, WindowWidgetMi
   }
 
   Future<void> biometricAuth() async {
-    bool success = await LocalAuthentication().authenticate(
-      /**
+    bool success;
+    try {
+      success = await LocalAuthentication().authenticate(
+        /**
        * @see [local_auth_windows example](https://github.com/flutter/packages/blob/main/packages/local_auth/local_auth_windows/example/lib/main.dart)
        */
-      localizedReason: GetPlatform.isWindows ? 'localizedReason'.tr : ' ',
-      authMessages: [
-        AndroidAuthMessages(
-          signInTitle: 'localizedReason'.tr,
-          biometricHint: '',
-          cancelButton: 'cancel'.tr,
-        ),
-        IOSAuthMessages(
-          localizedFallbackTitle: 'localizedReason'.tr,
-          cancelButton: 'cancel'.tr,
-        ),
-        const WindowsAuthMessages(),
-      ],
-      options: AuthenticationOptions(
-        stickyAuth: true,
-        /**
-         * @see [local_auth_windows](https://github.com/flutter/packages/blob/733869c981a3d0c649d904febc486b47ddb5f672/packages/local_auth/local_auth_windows/lib/local_auth_windows.dart#L54)
-         */
+        localizedReason: GetPlatform.isWindows ? 'localizedReason'.tr : ' ',
+        authMessages: [
+          AndroidAuthMessages(
+            signInTitle: 'localizedReason'.tr,
+            cancelButton: 'cancel'.tr,
+          ),
+          IOSAuthMessages(
+            localizedFallbackTitle: 'localizedReason'.tr,
+            cancelButton: 'cancel'.tr,
+          ),
+          const WindowsAuthMessages(),
+        ],
+        persistAcrossBackgrounding: true,
         biometricOnly: !GetPlatform.isWindows,
-      ),
-    );
+      );
+    } on LocalAuthException catch (e) {
+      log.warning('Biometric authentication failed', e);
+      return;
+    }
 
-    if (!success) {
+    if (!mounted || !success) {
       return;
     }
 
@@ -145,10 +153,12 @@ class _LockPageState extends State<LockPage> with WindowListener, WindowWidgetMi
     if (isEmptyOrNull(Get.routing.previous)) {
       offRoute(Routes.home);
     }
-
     /// on resume
     else {
       backRoute();
     }
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => transferActivityService.navigationReady(),
+    );
   }
 }
